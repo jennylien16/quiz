@@ -100,6 +100,9 @@
                     aria-expanded="false">
                     <i class="bi bi-collection" aria-hidden="true"></i> 紀錄管理
                 </button>
+                <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()">
+                    <i class="bi bi-house" aria-hidden="true"></i> 回首頁
+                </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp">
                     <i class="bi bi-question-circle" aria-hidden="true"></i> 說明
                 </button>
@@ -618,7 +621,11 @@
                     // 從 LocalStorage 載入紀錄
                     this.loadStatsFromLS();
                     await this.loadProjectQuestions();
-                    await this.loadStatsFromFile();
+                    // 若 LocalStorage 沒有紀錄，才載入預設紀錄檔
+                    if (Object.keys(this.stats).length === 0) {
+                        await this.loadStatsFromFile();
+                        this.syncStatsWithQuestions();
+                    }
                 },
 
                 // 預設載入題庫與紀錄檔
