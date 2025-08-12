@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Markdown 轉 HTML -->
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --muted: #6c757d
@@ -231,14 +233,17 @@
                             @submit-one.window="onSubmitFromParent($event)">
                             <div class="d-flex align-items-start justify-content-between">
                                 <div>
-                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span></div>
-                                    <div class="fs-5 mt-1" x-text="q.question"></div>
+                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
+                                            x-text="$root.currentIndex+1"></span>/<span
+                                            x-text="$root.quizSet.length"></span></div>
+                                    <div class="fs-5 mt-1" x-html="marked.parse(q.question)"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stat?.easy)?'badge-easy':''"
                                         x-text="(stat?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted">作答：<span x-text="stat?.attempts||0"></span> 次｜錯：<span
-                                            x-text="stat?.wrong||0"></span> 次</div>
+                                    <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
+                                            x-text="stat?.wrong||0"></span>/<span
+                                            x-text="stat?.attempts||0"></span></div>
                                 </div>
                             </div>
 
@@ -282,7 +287,7 @@
                                 <details class="mt-2" :open="(!isCorrect && $root.expandWrong) || expOpen">
                                     <summary class="fw-semibold pointer" @click.prevent="expOpen = !expOpen"><i
                                             class="bi bi-journal-text"></i> 答案與解析</summary>
-                                    <div class="mt-2" x-html="q.explanation"></div>
+                                    <div class="mt-2" x-html="marked.parse(q.explanation)"></div>
                                 </details>
                             </div>
                         </div>
@@ -325,14 +330,16 @@
                         <div class="border rounded-4 p-3 p-md-4 mb-3">
                             <div class="d-flex align-items-start justify-content-between">
                                 <div>
-                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span></div>
-                                    <div class="fs-5 mt-1" x-text="q.question"></div>
+                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
+                                            x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
+                                    <div class="fs-5 mt-1" x-html="marked.parse(q.question)"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''"
                                         x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted">作答：<span x-text="stats[q.id]?.attempts||0"></span>
-                                        次｜錯：<span x-text="stats[q.id]?.wrong||0"></span> 次</div>
+                                    <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
+                                            x-text="stats[q.id]?.wrong||0"></span>/<span
+                                            x-text="stats[q.id]?.attempts||0"></span></div>
                                 </div>
                             </div>
 
@@ -368,7 +375,7 @@
                                 <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
                                     <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析
                                     </summary>
-                                    <div class="mt-2" x-html="q.explanation"></div>
+                                    <div class="mt-2" x-html="marked.parse(q.explanation)"></div>
                                 </details>
                             </div>
                         </div>
@@ -436,16 +443,16 @@
             <div class="card card-soft">
                 <div class="card-body">
                     <h2 class="h6 mb-3" x-text="previewTitle"></h2>
-                    <template x-for="q in previewSet" :key="q.id">
+                    <template x-for="(q, idx) in previewSet" :key="q.id">
                         <div class="border rounded-4 p-3 p-md-4 mb-3">
                             <div class="d-flex align-items-start justify-content-between">
                                 <div>
-                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span></div>
-                                    <div class="fs-5 mt-1" x-text="q.question"></div>
+                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="previewSet.length"></span></div>
+                                    <div class="fs-5 mt-1" x-html="marked.parse(q.question)"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted">作答：<span x-text="stats[q.id]?.attempts||0"></span> 次｜錯：<span x-text="stats[q.id]?.wrong||0"></span> 次</div>
+                                    <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
                                 </div>
                             </div>
                             <div class="mt-3">
@@ -458,7 +465,7 @@
                             </div>
                             <details class="mt-2" open>
                                 <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析</summary>
-                                <div class="mt-2" x-html="q.explanation"></div>
+                                <div class="mt-2" x-html="marked.parse(q.explanation)"></div>
                             </details>
                         </div>
                     </template>
@@ -752,15 +759,18 @@
                         pool = pool.filter(q => (this.stats[q.id]?.wrong || 0) > 0);
                     }
 
-                    if (mode === 'review') {
-                        // 錯題優先：依錯誤率、嘗試數排序
-                        pool.sort((a, b) => {
-                            const sa = this.stats[a.id] || {}, sb = this.stats[b.id] || {};
-                            const ar = (sa.attempts ? sa.wrong / sa.attempts : 0), br = (sb.attempts ? sb.wrong / sb.attempts : 0);
-                            if (br !== ar) return br - ar;  // 高錯率優先
-                            return (sb.attempts || 0) - (sa.attempts || 0); // 嘗試多者優先
-                        });
-                    } else if (this.shuffle) {
+                    // 未作答優先，其次依錯誤率排序
+                    pool.sort((a, b) => {
+                        const sa = this.stats[a.id] || {}, sb = this.stats[b.id] || {};
+                        const aa = sa.attempts || 0, ba = sb.attempts || 0;
+                        if (aa === 0 && ba > 0) return -1;
+                        if (ba === 0 && aa > 0) return 1;
+                        const ar = (aa ? sa.wrong / aa : 0), br = (ba ? sb.wrong / ba : 0);
+                        if (br !== ar) return br - ar; // 高錯率優先
+                        return ba - aa; // 嘗試多者優先
+                    });
+
+                    if (this.shuffle) {
                         // 隨機洗牌
                         for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[pool[i], pool[j]] = [pool[j], pool[i]]; }
                     }
