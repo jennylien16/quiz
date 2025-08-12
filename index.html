@@ -115,7 +115,7 @@
             <ol class="mb-2">
                 <li>用「載入題庫」選擇 <span class="mono">question.json</span>（題庫格式見下方備註）。</li>
                 <li>設定出題數、模式與版面（單題/整頁），按「開始測驗」。</li>
-                <li>作答後可勾選「這題很簡單不用再出」，但<strong>必須答對</strong>才會生效。</li>
+                <li>作答後可勾選「這題很簡單不用再出」（答對才生效）或「這題我不確定」做紀錄。</li>
                 <li>紀錄會存到瀏覽器 LocalStorage。可隨時「匯出/匯入」同步到另一台電腦。</li>
             </ol>
             <div class="small text-secondary">備註：本系統支援單選/複選（<span class="mono">answer</span> 為陣列，長度 &gt; 1
@@ -294,6 +294,10 @@
 
                             <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
                                 <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" :id="'unsure_'+q.id" x-model="markUnsure">
+                                    <label class="form-check-label" :for="'unsure_'+q.id">這題我不確定</label>
+                                </div>
+                                <div class="form-check">
                                     <input class="form-check-input" type="checkbox" :id="'easy_'+q.id"
                                         x-model="markEasy">
                                     <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（<span
@@ -357,56 +361,60 @@
 
                     <template x-for="(q, idx) in quizSet" :key="q.id">
                         <div class="border rounded-4 p-3 p-md-4 mb-3">
-                            <div class="d-flex align-items-start justify-content-between">
+                            <template x-if="!(resultMap[q.id]==='correct' && !unsureMarkAll[q.id])">
                                 <div>
-                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
-                                            x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''"
-                                        x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
-                                            x-text="stats[q.id]?.wrong||0"></span>/<span
-                                            x-text="stats[q.id]?.attempts||0"></span></div>
-                                </div>
-                            </div>
-
-                            <div class="mt-3">
-                                <template x-for="opt in q.options" :key="opt.id">
-                                    <label class="option-item d-flex gap-2 align-items-start">
-                                        <input :type="(q.answer?.length||0)>1 ? 'checkbox':'radio'"
-                                            class="form-check-input mt-1" :name="'opt_'+q.id" :value="opt.id"
-                                            @change="toggleAnswer(q.id, opt.id, (q.answer?.length||0)>1, $event)"
-                                            :checked="(answers[q.id]||new Set()).has(opt.id)" />
+                                    <div class="d-flex align-items-start justify-content-between">
                                         <div>
-                                            <div class="fw-semibold" x-text="opt.text"></div>
-                                            <div class="small text-secondary" x-show="debugMode">id: <span class="mono"
-                                                    x-text="opt.id"></span></div>
+                                            <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
+                                            <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                         </div>
-                                    </label>
-                                </template>
-                            </div>
+                                        <div class="text-end">
+                                            <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
+                                            <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
+                                        </div>
+                                    </div>
 
-                            <div class="form-check mt-2">
-                                <input class="form-check-input" type="checkbox" :id="'easy_'+q.id"
-                                    x-model="easyMarkAll[q.id]">
-                                <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（需答對才算）</label>
-                            </div>
+                                    <div class="mt-3">
+                                        <template x-for="opt in q.options" :key="opt.id">
+                                            <label class="option-item d-flex gap-2 align-items-start">
+                                                <input :type="(q.answer?.length||0)>1 ? 'checkbox':'radio'" class="form-check-input mt-1" :name="'opt_'+q.id" :value="opt.id" @change="toggleAnswer(q.id, opt.id, (q.answer?.length||0)>1, $event)" :checked="(answers[q.id]||new Set()).has(opt.id)" />
+                                                <div>
+                                                    <div class="fw-semibold" x-text="opt.text"></div>
+                                                    <div class="small text-secondary" x-show="debugMode">id: <span class="mono" x-text="opt.id"></span></div>
+                                                </div>
+                                            </label>
+                                        </template>
+                                    </div>
 
-                            <div class="mt-2" x-show="resultMap[q.id]">
-                                <div class="alert"
-                                    :class="resultMap[q.id]==='correct' ? 'alert-success' : 'alert-danger'">
-                                    <div class="fw-semibold" x-text="resultMap[q.id]==='correct'?'答對了！':'答錯囉～'"></div>
-                                    <div class="small mt-1">正確答案：<span class="mono" x-text="q.answer.join(', ')"></span>
+                                    <div class="d-flex flex-wrap gap-3 mt-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" :id="'easy_'+q.id" x-model="easyMarkAll[q.id]">
+                                            <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（需答對才算）</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" :id="'unsure_'+q.id" x-model="unsureMarkAll[q.id]">
+                                            <label class="form-check-label" :for="'unsure_'+q.id">這題我不確定</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-2" x-show="resultMap[q.id]">
+                                        <div class="alert" :class="resultMap[q.id]==='correct' ? 'alert-success' : 'alert-danger'">
+                                            <div class="fw-semibold" x-text="resultMap[q.id]==='correct'?'答對了！':'答錯囉～'"></div>
+                                            <div class="small mt-1">正確答案：<span class="mono" x-text="q.answer.join(', ')"></span></div>
+                                        </div>
+                                        <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
+                                            <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析</summary>
+                                            <div class="mt-2" x-html="md(q.explanation)"></div>
+                                        </details>
                                     </div>
                                 </div>
-                                <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
-                                    <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析
-                                    </summary>
-                                    <div class="mt-2" x-html="md(q.explanation)"></div>
-                                </details>
-                            </div>
+                            </template>
+                            <template x-if="resultMap[q.id]==='correct' && !unsureMarkAll[q.id]">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
+                                    <span class="badge bg-success">答對</span>
+                                </div>
+                            </template>
                         </div>
                     </template>
 
@@ -638,6 +646,7 @@
                 answers: {},            // qid -> Set(optionId)
                 resultMap: {},          // qid -> 'correct' | 'wrong'
                 easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
+                unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
                 previewSet: [],
                 previewTitle: '',
                 showHelp: false,
@@ -655,7 +664,7 @@
                 },
 
                 // 紀錄（第二個 JSON）
-                stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, lastAnsweredAt }
+                stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, unsure, lastAnsweredAt }
                 filter: { onlyWrong: false, onlyNotEasy: false },
 
                 get statRows() {
@@ -774,7 +783,7 @@
 
                 // —— 紀錄（第二個 JSON）處理 ——
                 defaultStat(id) {
-                    return { id, attempts: 0, wrong: 0, correct: 0, lastSelected: [], easy: false, lastAnsweredAt: null };
+                    return { id, attempts: 0, wrong: 0, correct: 0, lastSelected: [], easy: false, unsure: false, lastAnsweredAt: null };
                 },
                 syncStatsWithQuestions() {
                     const map = { ...this.stats };
@@ -805,6 +814,7 @@
                                 correct: (cur.correct || 0) + (s.correct || 0),
                                 lastSelected: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.lastSelected : cur.lastSelected) || [],
                                 easy: !!(cur.easy || s.easy),
+                                unsure: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.unsure : cur.unsure) || false,
                                 lastAnsweredAt: Math.max(cur.lastAnsweredAt || 0, s.lastAnsweredAt || 0) || null,
                             };
                         }
@@ -819,7 +829,7 @@
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
-                    this.mode = mode; this.view = 'quiz'; this.currentIndex = 0; this.answers = {}; this.resultMap = {}; this.easyMarkAll = {};
+                    this.mode = mode; this.view = 'quiz'; this.currentIndex = 0; this.answers = {}; this.resultMap = {}; this.easyMarkAll = {}; this.unsureMarkAll = {};
                     clearInterval(this.timer);
                     const all = this.questions.slice();
                     // 過濾：排除已標簡單
@@ -847,7 +857,7 @@
 
                     this.quizSet = pool.slice(0, Math.min(this.numQuestions, pool.length));
                     // 初始化已選答案容器
-                    this.quizSet.forEach(q => { this.answers[q.id] = new Set(); this.easyMarkAll[q.id] = false; });
+                    this.quizSet.forEach(q => { this.answers[q.id] = new Set(); this.easyMarkAll[q.id] = false; this.unsureMarkAll[q.id] = false; });
                     // 計時：每題固定秒數
                     if (this.pageMode === 'one') {
                         this.timeLimitSec = this.perQuestionSec;
@@ -925,7 +935,7 @@
                         any = true;
                         const ok = this.isCorrectAnswer(q.answer, picked);
                         // 更新紀錄
-                        this.applyResult(q.id, ok, picked, this.easyMarkAll[q.id]);
+                        this.applyResult(q.id, ok, picked, this.easyMarkAll[q.id], this.unsureMarkAll[q.id]);
                         this.resultMap[q.id] = ok ? 'correct' : 'wrong';
                     }
                     if (!any) { alert('尚未作答任何題目'); return; }
@@ -941,7 +951,7 @@
                     for (const v of a) { if (!b.has(v)) return false; }
                     return true;
                 },
-                applyResult(qid, ok, picked, markEasy) {
+                applyResult(qid, ok, picked, markEasy, markUnsure) {
                     if (!this.stats[qid]) this.stats[qid] = this.defaultStat(qid);
                     const s = this.stats[qid];
                     s.attempts = (s.attempts || 0) + 1;
@@ -951,6 +961,8 @@
                     s.lastAnsweredAt = Date.now();
                     // 簡單標記：僅在答對且有勾選時才成立
                     if (ok && markEasy) s.easy = true;
+                    // 不確定標記：只要勾選就記錄
+                    s.unsure = !!markUnsure;
                 },
 
                 // —— 摘要資料容器 ——
@@ -969,6 +981,7 @@
                 isCorrect: false,
                 expOpen: false,
                 markEasy: false,
+                markUnsure: false,
                 qInit() {
                     // 監聽根元件的索引與題組變化以載入對應題目
                     this.$watch(() => this.$root.currentIndex, i => {
@@ -990,6 +1003,7 @@
                     this.isCorrect = false;
                     this.expOpen = false;
                     this.markEasy = false;
+                    this.markUnsure = false;
                 },
                 optionClass(id) {
                     if (!this.hasResult) return '';
@@ -1005,7 +1019,7 @@
                     // 同步回外層
                     this.$root.answers[this.q.id] = new Set(this.selected);
                 },
-                resetCurrent() { this.selected.clear(); this.hasResult = false; this.isCorrect = false; this.expOpen = false; this.markEasy = false; this.$root.answers[this.q.id] = new Set(); },
+                    resetCurrent() { this.selected.clear(); this.hasResult = false; this.isCorrect = false; this.expOpen = false; this.markEasy = false; this.markUnsure = false; this.$root.answers[this.q.id] = new Set(); },
                 submitOne() {
                     const picked = Array.from(this.selected);
                     if (picked.length === 0) { alert('請先選擇答案'); return; }
@@ -1020,6 +1034,7 @@
                     s.lastSelected = [...picked];
                     s.lastAnsweredAt = Date.now();
                     if (ok && this.markEasy) s.easy = true; // 需答對才成立
+                    s.unsure = !!this.markUnsure;
                     this.$root.resultMap[this.q.id] = ok ? 'correct' : 'wrong';
                     this.$root.saveStatsToLS();
                     if (!ok && this.$root.expandWrong) this.expOpen = true;
