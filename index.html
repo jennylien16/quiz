@@ -240,7 +240,7 @@
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
                                             x-text="$root.currentIndex+1"></span>/<span
                                             x-text="$root.quizSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="marked.parse(q.question)"></div>
+                                    <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stat?.easy)?'badge-easy':''"
@@ -336,7 +336,7 @@
                                 <div>
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
                                             x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="marked.parse(q.question)"></div>
+                                    <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''"
@@ -452,7 +452,7 @@
                             <div class="d-flex align-items-start justify-content-between">
                                 <div>
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="previewSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="marked.parse(q.question)"></div>
+                                    <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
@@ -903,7 +903,10 @@
                 markEasy: false,
                 startTs: 0,
                 qInit() {
-                    this.loadQuestion(this.$root.quizSet[this.$root.currentIndex]);
+                    // Ensure the question set is ready before loading
+                    this.$nextTick(() => {
+                        this.loadQuestion(this.$root.quizSet[this.$root.currentIndex]);
+                    });
                 },
                 loadQuestion(q) {
                     if (!q) return;
