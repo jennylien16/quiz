@@ -216,7 +216,8 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between sticky-header">
                         <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 進度：<strong
-                                x-text="currentIndex+1"></strong>/<span x-text="quizSet.length"></span> ｜ 時間：<strong x-text="timeText"></strong></div>
+                                x-text="quizSet.length ? currentIndex + 1 : 0"></strong>/<span
+                                x-text="quizSet.length"></span> ｜ 時間：<strong x-text="timeText"></strong></div>
                         <div class="d-flex align-items-center gap-2">
                             <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
                                     class="bi bi-house"></i> 回首頁</button>
@@ -238,7 +239,7 @@
                             <div class="d-flex align-items-start justify-content-between">
                                 <div>
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
-                                            x-text="$root.currentIndex+1"></span>/<span
+                                            x-text="$root.quizSet.length ? $root.currentIndex + 1 : 0"></span>/<span
                                             x-text="$root.quizSet.length"></span></div>
                                     <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
                                 </div>
@@ -407,8 +408,20 @@
                     <div class="row g-3 mt-2">
                         <div class="col-6 col-md-3">
                             <div class="border rounded-4 p-3 text-center">
-                                <div class="small-muted">作答題數</div>
+                                <div class="small-muted">總題數</div>
                                 <div class="display-6" x-text="summary.total"></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded-4 p-3 text-center">
+                                <div class="small-muted">作答題數</div>
+                                <div class="display-6" x-text="summary.total - summary.unanswered"></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded-4 p-3 text-center">
+                                <div class="small-muted">未作答</div>
+                                <div class="display-6 text-warning" x-text="summary.unanswered"></div>
                             </div>
                         </div>
                         <div class="col-6 col-md-3">
@@ -432,6 +445,19 @@
                             </div>
                         </div>
                     </div>
+                    <template x-if="summary.wrongList.length">
+                        <div class="mt-4">
+                            <h3 class="h6">錯題分析</h3>
+                            <ul class="list-group">
+                                <template x-for="item in summary.wrongList" :key="item.id">
+                                    <li class="list-group-item">
+                                        <div class="fw-semibold" x-text="item.question"></div>
+                                        <div class="small-muted">題號：<span class="mono" x-text="item.id"></span></div>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
                     <div class="d-flex gap-2 mt-3">
                           <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
                           回首頁</button>
@@ -827,11 +853,18 @@
                 },
                 finishAndSummary() {
                     clearInterval(this.timer);
-                    // 計算本輪統計（以 resultMap 為準；單題模式尚未提交的不算）
-                    const ids = Object.keys(this.resultMap);
-                    const correct = ids.filter(id => this.resultMap[id] === 'correct').length;
-                    const wrong = ids.filter(id => this.resultMap[id] === 'wrong').length;
-                    this.summary = { total: ids.length, correct, wrong };
+                    // 以本次出題集為基準計算統計
+                    const total = this.quizSet.length;
+                    const answeredIds = Object.keys(this.resultMap);
+                    const correct = answeredIds.filter(id => this.resultMap[id] === 'correct').length;
+                    const wrongIds = answeredIds.filter(id => this.resultMap[id] === 'wrong');
+                    const wrong = wrongIds.length;
+                    const unanswered = total - answeredIds.length;
+                    const wrongList = wrongIds.map(id => {
+                        const q = this.quizSet.find(q => q.id === id);
+                        return q ? { id: q.id, question: q.question } : { id, question: '' };
+                    });
+                    this.summary = { total, correct, wrong, unanswered, wrongList };
                     this.view = 'summary';
                 },
 
@@ -886,7 +919,7 @@
                 },
 
                 // —— 摘要資料容器 ——
-                summary: { total: 0, correct: 0, wrong: 0 },
+                summary: { total: 0, correct: 0, wrong: 0, unanswered: 0, wrongList: [] },
             }
         }
 
@@ -903,10 +936,14 @@
                 markEasy: false,
                 startTs: 0,
                 qInit() {
-                    // Ensure the question set is ready before loading
-                    this.$nextTick(() => {
+                    // 監聽根元件的索引與題組變化以載入對應題目
+                    this.$watch('$root.currentIndex', (i) => {
+                        this.loadQuestion(this.$root.quizSet[i]);
+                    });
+                    this.$watch('$root.quizSet', () => {
                         this.loadQuestion(this.$root.quizSet[this.$root.currentIndex]);
                     });
+                    this.loadQuestion(this.$root.quizSet[this.$root.currentIndex]);
                 },
                 loadQuestion(q) {
                     if (!q) return;
