@@ -141,7 +141,8 @@
                         <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
                         <div class="d-flex flex-wrap gap-2">
                             <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
-                                @click="exportStats()"><i class="bi bi-save2" aria-hidden="true"></i> 匯出紀錄</button>
+                                @click="saveStatsFile()"><i class="bi bi-save2" aria-hidden="true"></i> 儲存紀錄檔</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入紀錄檔</button>
                             <label class="btn btn-sm btn-outline-primary mb-0">
                                 <i class="bi bi-upload" aria-hidden="true"></i> 匯入紀錄
                                 <input type="file" class="d-none" accept=".json,application/json"
@@ -208,9 +209,9 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between sticky-header">
                         <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 進度：<strong
-                                x-text="currentIndex+1"></strong>/<span x-text="quizSet.length"></span></div>
+                                x-text="currentIndex+1"></strong>/<span x-text="quizSet.length"></span> ｜ 時間：<strong x-text="timeText"></strong></div>
                         <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" @click="view='home'"><i
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
                                     class="bi bi-house"></i> 回首頁</button>
                             <button class="btn btn-sm btn-outline-secondary" :disabled="currentIndex===0"
                                 @click="prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
@@ -286,8 +287,8 @@
                     </template>
 
                     <div class="d-flex justify-content-between mt-4" x-show="quizSet.length>0">
-                        <button class="btn btn-outline-secondary" @click="view='home'"><i class="bi bi-house"></i>
-                            回首頁</button>
+                          <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
+                          回首頁</button>
                         <div class="d-flex gap-2">
                             <button class="btn btn-outline-secondary" :disabled="currentIndex===0" @click="prev()"><i
                                     class="bi bi-chevron-left"></i> 上一題</button>
@@ -307,9 +308,9 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between sticky-header">
                         <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 題數：<strong
-                                x-text="quizSet.length"></strong></div>
+                                x-text="quizSet.length"></strong> ｜ 時間：<strong x-text="timeText"></strong></div>
                         <div>
-                            <button class="btn btn-sm btn-outline-secondary" @click="view='home'"><i
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
                                     class="bi bi-house"></i> 回首頁</button>
                         </div>
                     </div>
@@ -372,8 +373,8 @@
                     </template>
 
                     <div class="d-flex justify-content-between mt-3">
-                        <button class="btn btn-outline-secondary" @click="view='home'"><i class="bi bi-house"></i>
-                            回首頁</button>
+                          <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
+                          回首頁</button>
                         <div class="d-flex gap-2">
                             <button class="btn btn-primary" @click="submitAll()"><i class="bi bi-check2-circle"></i>
                                 批改全部</button>
@@ -419,8 +420,8 @@
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
-                        <button class="btn btn-outline-secondary" @click="view='home'"><i class="bi bi-house"></i>
-                            回首頁</button>
+                          <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
+                          回首頁</button>
                         <button class="btn btn-primary" @click="startQuiz(mode)"><i class="bi bi-arrow-repeat"></i>
                             同模式再來一輪</button>
                     </div>
@@ -444,8 +445,8 @@
                                 <input class="form-check-input" type="checkbox" id="onlyEasy" x-model="filter.onlyEasy">
                                 <label class="form-check-label" for="onlyEasy">只看已標簡單</label>
                             </div>
-                            <button class="btn btn-sm btn-outline-secondary" @click="exportStats()"><i
-                                    class="bi bi-download"></i> 匯出</button>
+                              <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
+                                      class="bi bi-download"></i> 匯出</button>
                         </div>
                     </div>
                     <div class="table-responsive mt-3">
@@ -540,6 +541,15 @@
                 startTime: null,
                 showHelp: false,
                 debugMode: false,
+                // 計時相關
+                timer: null,
+                timeLimitSec: 0,
+                remainingSec: 0,
+                get timeText() {
+                    const m = Math.floor(this.remainingSec / 60).toString().padStart(2, '0');
+                    const s = Math.floor(this.remainingSec % 60).toString().padStart(2, '0');
+                    return `${m}:${s}`;
+                },
 
                 // 紀錄（第二個 JSON）
                 stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, lastAnsweredAt, avgTimeSec, totalTimeSec }
@@ -553,9 +563,38 @@
                     return rows;
                 },
 
-                init() {
+                async init() {
                     // 從 LocalStorage 載入紀錄
                     this.loadStatsFromLS();
+                    await this.loadDefaultQuestions();
+                    await this.loadStatsFromFile();
+                },
+
+                // 預設載入題庫與紀錄檔
+                async loadDefaultQuestions() {
+                    try {
+                        const res = await fetch('question.json');
+                        if (res.ok) {
+                            const arr = await res.json();
+                            if (Array.isArray(arr)) {
+                                this.questions = arr;
+                                this.syncStatsWithQuestions();
+                                this.numQuestions = Math.min(10, this.questions.length || 10);
+                            }
+                        }
+                    } catch (err) { console.warn('載入預設題庫失敗', err); }
+                },
+                async loadStatsFromFile() {
+                    try {
+                        const res = await fetch('quiz_stats.json');
+                        if (res.ok) {
+                            const obj = await res.json();
+                            if (obj && typeof obj === 'object') {
+                                this.stats = obj;
+                                this.saveStatsToLS();
+                            }
+                        }
+                    } catch (err) { console.warn('載入紀錄檔失敗', err); }
                 },
 
                 // —— 題庫載入 ——
@@ -604,7 +643,7 @@
                     catch { this.stats = {}; }
                 },
                 saveStatsToLS() { localStorage.setItem('quizStats', JSON.stringify(this.stats)); },
-                exportStats() { downloadJSON(this.stats, `quiz_stats_${nowStamp()}.json`); },
+                saveStatsFile() { downloadJSON(this.stats, 'quiz_stats.json'); },
                 async importStatsFile(e) {
                     const file = e.target.files?.[0]; if (!file) return;
                     try {
@@ -639,6 +678,7 @@
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
                     this.mode = mode; this.view = 'quiz'; this.currentIndex = 0; this.answers = {}; this.resultMap = {}; this.easyMarkAll = {}; this.startTime = Date.now();
+                    clearInterval(this.timer);
                     const all = this.questions.slice();
                     // 過濾：排除已標簡單
                     let pool = all.filter(q => !this.excludeEasy || !(this.stats[q.id]?.easy));
@@ -663,18 +703,42 @@
                     this.quizSet = pool.slice(0, Math.min(this.numQuestions, pool.length));
                     // 初始化已選答案容器
                     this.quizSet.forEach(q => { this.answers[q.id] = new Set(); this.easyMarkAll[q.id] = false; });
+                    // 計時：每題 1 分鐘，最多 60 分鐘
+                    const totalSec = Math.min(60 * 60, this.quizSet.length * 60);
+                    this.timeLimitSec = totalSec;
+                    this.startTimer();
+                },
+
+                startTimer() {
+                    this.remainingSec = this.timeLimitSec;
+                    clearInterval(this.timer);
+                    if (this.remainingSec <= 0) { this.finishAndSummary(); return; }
+                    this.timer = setInterval(() => {
+                        if (this.remainingSec > 0) {
+                            this.remainingSec--;
+                        } else {
+                            clearInterval(this.timer);
+                            this.finishAndSummary();
+                        }
+                    }, 1000);
                 },
 
                 // —— 一頁一題：導覽與收尾 ——
                 prev() { if (this.currentIndex > 0) { this.currentIndex--; window.scrollTo({ top: 0, behavior: 'smooth' }); } },
                 next() { if (this.currentIndex < this.quizSet.length - 1) { this.currentIndex++; window.scrollTo({ top: 0, behavior: 'smooth' }); } },
                 finishAndSummary() {
+                    clearInterval(this.timer);
                     // 計算本輪統計（以 resultMap 為準；單題模式尚未提交的不算）
                     const ids = Object.keys(this.resultMap);
                     const correct = ids.filter(id => this.resultMap[id] === 'correct').length;
                     const wrong = ids.filter(id => this.resultMap[id] === 'wrong').length;
                     this.summary = { total: ids.length, correct, wrong };
                     this.view = 'summary';
+                },
+
+                exitQuiz() {
+                    clearInterval(this.timer);
+                    this.view = 'home';
                 },
 
                 // —— 一頁所有題：批改 ——
