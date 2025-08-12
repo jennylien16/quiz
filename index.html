@@ -8,10 +8,10 @@
     <!-- Bootstrap 5 + Icons (純前端好排版) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Markdown 轉 HTML -->
     <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
             --muted: #6c757d
@@ -265,7 +265,7 @@
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
                                             x-text="$root.quizSet.length ? $root.currentIndex + 1 : 0"></span>/<span
                                             x-text="$root.quizSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
+                                    <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stat?.easy)?'badge-easy':''"
@@ -316,7 +316,7 @@
                                 <details class="mt-2" :open="(!isCorrect && $root.expandWrong) || expOpen">
                                     <summary class="fw-semibold pointer" @click.prevent="expOpen = !expOpen"><i
                                             class="bi bi-journal-text"></i> 答案與解析</summary>
-                                    <div class="mt-2" x-html="marked.parse(q.explanation)"></div>
+                                    <div class="mt-2" x-html="md(q.explanation)"></div>
                                 </details>
                             </div>
                         </div>
@@ -361,7 +361,7 @@
                                 <div>
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span
                                             x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
+                                    <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''"
@@ -404,7 +404,7 @@
                                 <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
                                     <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析
                                     </summary>
-                                    <div class="mt-2" x-html="marked.parse(q.explanation)"></div>
+                                    <div class="mt-2" x-html="md(q.explanation)"></div>
                                 </details>
                             </div>
                         </div>
@@ -502,7 +502,7 @@
                             <div class="d-flex align-items-start justify-content-between">
                                 <div>
                                     <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="previewSet.length"></span></div>
-                                    <div class="fs-5 mt-1" x-html="marked.parse(q?.question || '')"></div>
+                                    <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
@@ -519,7 +519,7 @@
                             </div>
                             <details class="mt-2" open>
                                 <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析</summary>
-                                <div class="mt-2" x-html="marked.parse(q.explanation)"></div>
+                                <div class="mt-2" x-html="md(q.explanation)"></div>
                             </details>
                         </div>
                     </template>
@@ -604,6 +604,7 @@
 
     <script>
         // —— 工具函數 ——
+        const md = (text) => window.marked ? window.marked.parse(text) : text;
         const deepClone = (o) => JSON.parse(JSON.stringify(o));
         const fileToText = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsText(file, 'utf-8'); });
         const downloadJSON = (obj, filename) => {
