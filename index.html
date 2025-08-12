@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>純前端出題系統｜Alpine.js</title>
+    <!-- Bootstrap 5 + Icons (純前端好排版) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        :root {
+            --muted: #6c757d
+        }
+
+        body {
+            background: #f8fafc
+        }
+
+        .card-soft {
+            border: 1px solid #e9eef5;
+            border-radius: 1rem;
+            box-shadow: 0 2px 12px rgba(16, 24, 40, .06)
+        }
+
+        .option-item {
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+            border-radius: .6rem;
+            padding: .75rem 1rem;
+            margin-bottom: .5rem;
+            transition: all .15s
+        }
+
+        .option-item:hover {
+            border-color: #b6beca;
+            background: #f9fbfd
+        }
+
+        .option-correct {
+            border-color: #22c55e;
+            background: #effdf3
+        }
+
+        .option-wrong {
+            border-color: #ef4444;
+            background: #fff1f2
+        }
+
+        .q-meta {
+            font-size: .88rem;
+            color: var(--muted)
+        }
+
+        .badge-easy {
+            background: #e6f4ea;
+            color: #137333;
+            border: 1px solid #c6e8d1
+        }
+
+        details>summary {
+            cursor: pointer
+        }
+
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #f8fafc;
+            padding: .5rem 0
+        }
+
+        .pointer {
+            cursor: pointer
+        }
+
+        .small-muted {
+            font-size: .875rem;
+            color: var(--muted)
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
+        }
+    </style>
+</head>
+
+<body x-data="quizApp()" x-init="init()" class="py-4">
+    <div class="container-xxl">
+
+        <!-- 標題列 -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="h4 mb-0">純前端出題系統 <span class="small text-secondary">｜Alpine.js</span></h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#recordPanel"
+                    aria-expanded="false">
+                    <i class="bi bi-collection" aria-hidden="true"></i> 紀錄管理
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp">
+                    <i class="bi bi-question-circle" aria-hidden="true"></i> 說明
+                </button>
+            </div>
+        </div>
+
+        <!-- 使用說明 -->
+        <div class="alert alert-info py-3" x-show="showHelp" x-transition>
+            <div class="fw-bold mb-1">快速使用：</div>
+            <ol class="mb-2">
+                <li>用「載入題庫」選擇 <span class="mono">question.json</span>（題庫格式見下方備註）。</li>
+                <li>設定出題數、模式與版面（單題/整頁），按「開始測驗」。</li>
+                <li>作答後可勾選「這題很簡單不用再出」，但<strong>必須答對</strong>才會生效。</li>
+                <li>紀錄會存到瀏覽器 LocalStorage。可隨時「匯出/匯入」同步到另一台電腦。</li>
+            </ol>
+            <div class="small text-secondary">備註：本系統支援單選/複選（<span class="mono">answer</span> 為陣列，長度 &gt; 1
+                視為複選）。<br>解析欄位可放 HTML，建議使用 <span
+                    class="mono">&lt;details&gt;&lt;summary&gt;答案與解析&lt;/summary&gt;...&lt;/details&gt;</span> 結構。</div>
+        </div>
+
+        <!-- 載入/設定 卡片 -->
+        <div class="card card-soft mb-4" x-show="view==='home'">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-lg-6">
+                        <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
+                        <input type="file" class="form-control" accept=".json,application/json"
+                            @change="loadQuestionsFromFile($event)" />
+                        <div class="small text-secondary mt-2" x-show="questions.length===0">尚未載入題庫，可先載入下方「範例題庫」試用。
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-primary" @click="loadSample()"><i
+                                    class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例題庫</button>
+                            <button class="btn btn-sm btn-outline-secondary" :disabled="questions.length===0"
+                                @click="downloadQuestions()"><i class="bi bi-download" aria-hidden="true"></i>
+                                下載目前題庫</button>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
+                                @click="exportStats()"><i class="bi bi-save2" aria-hidden="true"></i> 匯出紀錄</button>
+                            <label class="btn btn-sm btn-outline-primary mb-0">
+                                <i class="bi bi-upload" aria-hidden="true"></i> 匯入紀錄
+                                <input type="file" class="d-none" accept=".json,application/json"
+                                    @change="importStatsFile($event)" />
+                            </label>
+                            <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()"><i
+                                    class="bi bi-trash3" aria-hidden="true"></i> 清空紀錄</button>
+                        </div>
+                        <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」、最後作答時間、平均作答秒數…等。</div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">出題數</label>
+                        <input type="number" class="form-control" min="1" :max="questions.length||1"
+                            x-model.number="numQuestions" />
+                        <div class="small text-secondary mt-1">題庫目前：<strong x-text="questions.length"></strong> 題</div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">版面</label>
+                        <select class="form-select" x-model="pageMode">
+                            <option value="one">一頁一題</option>
+                            <option value="all">一頁所有題</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">其他選項</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="shuffle" x-model="shuffle">
+                            <label class="form-check-label" for="shuffle">隨機出題</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="excludeEasy" x-model="excludeEasy">
+                            <label class="form-check-label" for="excludeEasy">忽略已標「簡單」的題目</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showExpWrong" x-model="expandWrong">
+                            <label class="form-check-label" for="showExpWrong">答錯自動展開解析</label>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" :disabled="questions.length===0"
+                                @click="startQuiz('normal')"><i class="bi bi-play-circle" aria-hidden="true"></i>
+                                開始測驗</button>
+                            <button class="btn btn-outline-primary" :disabled="questions.length===0"
+                                @click="startQuiz('review')"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                                錯題複習（優先）</button>
+                            <button class="btn btn-outline-danger" :disabled="questions.length===0"
+                                @click="startQuiz('wrongOnly')"><i class="bi bi-exclamation-octagon"
+                                    aria-hidden="true"></i> 只出錯題</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測驗區：一頁一題 -->
+        <template x-if="view==='quiz' && pageMode==='one'">
+            <div class="card card-soft">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between sticky-header">
+                        <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 進度：<strong
+                                x-text="currentIndex+1"></strong>/<span x-text="quizSet.length"></span></div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" @click="view='home'"><i
+                                    class="bi bi-house"></i> 回首頁</button>
+                            <button class="btn btn-sm btn-outline-secondary" :disabled="currentIndex===0"
+                                @click="prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
+                            <button class="btn btn-sm btn-outline-secondary" :disabled="currentIndex>=quizSet.length-1"
+                                @click="next()">下一題 <i class="bi bi-chevron-right"></i></button>
+                        </div>
+                    </div>
+
+                    <template x-if="quizSet.length===0">
+                        <div class="alert alert-warning mt-3">此模式下沒有可出題目（可能沒有錯題或全部被標記為簡單）。</div>
+                    </template>
+
+                    <template x-if="quizSet.length>0">
+                        <div class="mt-3" x-data="questionVM(quizSet[currentIndex])" x-init="qInit()"
+                            @submit-one.window="onSubmitFromParent($event)">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span></div>
+                                    <div class="fs-5 mt-1" x-text="q.question"></div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge rounded-pill me-2" :class="(stat?.easy)?'badge-easy':''"
+                                        x-text="(stat?.easy)?'已標簡單':''"></span>
+                                    <div class="small-muted">作答：<span x-text="stat?.attempts||0"></span> 次｜錯：<span
+                                            x-text="stat?.wrong||0"></span> 次</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <template x-for="opt in q.options" :key="opt.id">
+                                    <label class="option-item d-flex gap-2 align-items-start"
+                                        :class="optionClass(opt.id)">
+                                        <input :type="isMulti? 'checkbox':'radio'" class="form-check-input mt-1"
+                                            :name="'opt_'+q.id" :value="opt.id" @change="toggle(opt.id,$event)"
+                                            :checked="selected.has(opt.id)" />
+                                        <div>
+                                            <div class="fw-semibold" x-text="opt.text"></div>
+                                            <div class="small text-secondary" x-show="debugMode">id: <span class="mono"
+                                                    x-text="opt.id"></span></div>
+                                        </div>
+                                    </label>
+                                </template>
+                            </div>
+
+                            <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" :id="'easy_'+q.id"
+                                        x-model="markEasy">
+                                    <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（<span
+                                            class="text-secondary">需答對才算</span>）</label>
+                                </div>
+                                <button class="btn btn-primary" @click="submitOne()"><i class="bi bi-check2-circle"
+                                        aria-hidden="true"></i> 提交本題</button>
+                                <button class="btn btn-outline-secondary" @click="resetCurrent()"><i
+                                        class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> 重新作答</button>
+                            </div>
+
+                            <!-- 回饋與解析 -->
+                            <div class="mt-3" x-show="hasResult">
+                                <div class="alert" :class="isCorrect? 'alert-success':'alert-danger'">
+                                    <div class="fw-semibold" x-text="isCorrect? '答對了！':'答錯囉～'"></div>
+                                    <div class="small mt-1">正確答案：
+                                        <span class="mono" x-text="q.answer.join(', ')"></span>
+                                    </div>
+                                </div>
+                                <details class="mt-2" :open="(!isCorrect && $root.expandWrong) || expOpen">
+                                    <summary class="fw-semibold pointer" @click.prevent="expOpen = !expOpen"><i
+                                            class="bi bi-journal-text"></i> 答案與解析</summary>
+                                    <div class="mt-2" x-html="q.explanation"></div>
+                                </details>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="d-flex justify-content-between mt-4" x-show="quizSet.length>0">
+                        <button class="btn btn-outline-secondary" @click="view='home'"><i class="bi bi-house"></i>
+                            回首頁</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary" :disabled="currentIndex===0" @click="prev()"><i
+                                    class="bi bi-chevron-left"></i> 上一題</button>
+                            <button class="btn btn-outline-secondary" :disabled="currentIndex>=quizSet.length-1"
+                                @click="next()">下一題 <i class="bi bi-chevron-right"></i></button>
+                            <button class="btn btn-success" @click="finishAndSummary()"><i class="bi bi-flag"></i>
+                                結束並看成績</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- 測驗區：一頁所有題 -->
+        <template x-if="view==='quiz' && pageMode==='all'">
+            <div class="card card-soft">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between sticky-header">
+                        <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 題數：<strong
+                                x-text="quizSet.length"></strong></div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary" @click="view='home'"><i
+                                    class="bi bi-house"></i> 回首頁</button>
+                        </div>
+                    </div>
+
+                    <template x-if="quizSet.length===0">
+                        <div class="alert alert-warning mt-3">此模式下沒有可出題目（可能沒有錯題或全部被標記為簡單）。</div>
+                    </template>
+
+                    <template x-for="(q, idx) in quizSet" :key="q.id">
+                        <div class="border rounded-4 p-3 p-md-4 mb-3">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span></div>
+                                    <div class="fs-5 mt-1" x-text="q.question"></div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''"
+                                        x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
+                                    <div class="small-muted">作答：<span x-text="stats[q.id]?.attempts||0"></span>
+                                        次｜錯：<span x-text="stats[q.id]?.wrong||0"></span> 次</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <template x-for="opt in q.options" :key="opt.id">
+                                    <label class="option-item d-flex gap-2 align-items-start">
+                                        <input :type="(q.answer?.length||0)>1 ? 'checkbox':'radio'"
+                                            class="form-check-input mt-1" :name="'opt_'+q.id" :value="opt.id"
+                                            @change="toggleAnswer(q.id, opt.id, (q.answer?.length||0)>1, $event)"
+                                            :checked="(answers[q.id]||new Set()).has(opt.id)" />
+                                        <div>
+                                            <div class="fw-semibold" x-text="opt.text"></div>
+                                            <div class="small text-secondary" x-show="debugMode">id: <span class="mono"
+                                                    x-text="opt.id"></span></div>
+                                        </div>
+                                    </label>
+                                </template>
+                            </div>
+
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" :id="'easy_'+q.id"
+                                    x-model="easyMarkAll[q.id]">
+                                <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（需答對才算）</label>
+                            </div>
+
+                            <div class="mt-2" x-show="resultMap[q.id]">
+                                <div class="alert"
+                                    :class="resultMap[q.id]==='correct' ? 'alert-success' : 'alert-danger'">
+                                    <div class="fw-semibold" x-text="resultMap[q.id]==='correct'?'答對了！':'答錯囉～'"></div>
+                                    <div class="small mt-1">正確答案：<span class="mono" x-text="q.answer.join(', ')"></span>
+                                    </div>
+                                </div>
+                                <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
+                                    <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析
+                                    </summary>
+                                    <div class="mt-2" x-html="q.explanation"></div>
+                                </details>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <button class="btn btn-outline-secondary" @click="view='home'"><i class="bi bi-house"></i>
+                            回首頁</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" @click="submitAll()"><i class="bi bi-check2-circle"></i>
+                                批改全部</button>
+                            <button class="btn btn-success" @click="finishAndSummary()"
+                                :disabled="Object.keys(resultMap).length===0"><i class="bi bi-flag"></i> 結束並看成績</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- 成績摘要 -->
+        <template x-if="view==='summary'">
+            <div class="card card-soft">
+                <div class="card-body">
+                    <h2 class="h5">本次成績</h2>
+                    <div class="row g-3 mt-2">
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded-4 p-3 text-center">
+                                <div class="small-muted">作答題數</div>
+                                <div class="display-6" x-text="summary.total"></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded-4 p-3 text-center">
+                                <div class="small-muted">答對</div>
+                                <div class="display-6 text-success" x-text="summary.correct"></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded-4 p-3 text-center">
+                                <div class="small-muted">答錯</div>
+                                <div class="display-6 text-danger" x-text="summary.wrong"></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border rounded-4 p-3 text-center">
+                                <div class="small-muted">正確率</div>
+                                <div class="display-6"
+                                    x-text="(summary.total? Math.round(summary.correct/summary.total*100):0)+'%' ">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-outline-secondary" @click="view='home'"><i class="bi bi-house"></i>
+                            回首頁</button>
+                        <button class="btn btn-primary" @click="startQuiz(mode)"><i class="bi bi-arrow-repeat"></i>
+                            同模式再來一輪</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <!-- 紀錄管理（可折疊） -->
+        <div id="recordPanel" class="collapse mt-4">
+            <div class="card card-soft">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h2 class="h6 mb-0">統計紀錄檢視</h2>
+                        <div class="d-flex gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="onlyWrong"
+                                    x-model="filter.onlyWrong">
+                                <label class="form-check-label" for="onlyWrong">只看有錯題</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="onlyEasy" x-model="filter.onlyEasy">
+                                <label class="form-check-label" for="onlyEasy">只看已標簡單</label>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary" @click="exportStats()"><i
+                                    class="bi bi-download"></i> 匯出</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>題號</th>
+                                    <th>作答</th>
+                                    <th>錯誤</th>
+                                    <th>正確</th>
+                                    <th>正確率</th>
+                                    <th>平均秒數</th>
+                                    <th>簡單</th>
+                                    <th>最後作答</th>
+                                    <th>動作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="row in statRows" :key="row.id">
+                                    <tr>
+                                        <td class="mono" x-text="row.id"></td>
+                                        <td x-text="row.attempts"></td>
+                                        <td x-text="row.wrong"></td>
+                                        <td x-text="row.correct"></td>
+                                        <td x-text="(row.attempts? Math.round(row.correct/row.attempts*100):0)+'%'">
+                                        </td>
+                                        <td x-text="row.avgTimeSec?.toFixed(1)||'-'"></td>
+                                        <td>
+                                            <span class="badge rounded-pill" :class="row.easy? 'badge-easy':''"
+                                                x-text="row.easy? '是':'否'"></span>
+                                        </td>
+                                        <td class="mono"
+                                            x-text="row.lastSelected?.length? row.lastSelected.join(', '):'-'"></td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-secondary" @click="toggleEasy(row.id)"><i
+                                                        class="bi"
+                                                        :class="row.easy? 'bi-x-circle':'bi-bookmark-check' "></i></button>
+                                                <button class="btn btn-outline-danger" @click="clearOne(row.id)"><i
+                                                        class="bi bi-trash3"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="statRows.length===0">
+                                    <td colspan="9" class="text-center text-secondary">尚無紀錄</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // —— 工具函數 ——
+        const deepClone = (o) => JSON.parse(JSON.stringify(o));
+        const fileToText = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsText(file, 'utf-8'); });
+        const downloadJSON = (obj, filename) => {
+            const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
+            URL.revokeObjectURL(url);
+        };
+        const nowStamp = () => {
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        };
+
+        // —— Alpine Root ——
+        function quizApp() {
+            return {
+                // 狀態
+                view: 'home',            // home | quiz | summary
+                pageMode: 'one',         // one | all
+                mode: 'normal',          // normal | review | wrongOnly
+                get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題' }[this.mode] },
+                questions: [],
+                quizSet: [],
+                currentIndex: 0,
+                numQuestions: 10,
+                shuffle: true,
+                excludeEasy: true,
+                expandWrong: true,
+                answers: {},            // qid -> Set(optionId)
+                resultMap: {},          // qid -> 'correct' | 'wrong'
+                easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
+                startTime: null,
+                showHelp: false,
+                debugMode: false,
+
+                // 紀錄（第二個 JSON）
+                stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, lastAnsweredAt, avgTimeSec, totalTimeSec }
+                filter: { onlyWrong: false, onlyEasy: false },
+
+                get statRows() {
+                    let rows = Object.values(this.stats).map(s => ({ ...s }));
+                    if (this.filter.onlyWrong) rows = rows.filter(r => r.wrong > 0);
+                    if (this.filter.onlyEasy) rows = rows.filter(r => r.easy);
+                    rows.sort((a, b) => a.id.localeCompare(b.id));
+                    return rows;
+                },
+
+                init() {
+                    // 從 LocalStorage 載入紀錄
+                    this.loadStatsFromLS();
+                },
+
+                // —— 題庫載入 ——
+                async loadQuestionsFromFile(e) {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                        const text = await fileToText(file);
+                        const arr = JSON.parse(text);
+                        if (!Array.isArray(arr)) throw new Error('題庫 JSON 格式需為陣列');
+                        this.questions = arr;
+                        this.syncStatsWithQuestions();
+                        this.numQuestions = Math.min(10, this.questions.length || 10);
+                    } catch (err) {
+                        alert('載入題庫失敗：' + err.message);
+                    }
+                },
+                loadSample() {
+                    // 三題示範（與你提供的格式一致）
+                    this.questions = [
+                        { "id": "0001", "question": "「人工智慧」這個術語首先在哪個歷史性會議上被提出？", "options": [{ "id": 1, "text": "國家測試研討會" }, { "id": 2, "text": "世界電腦高峰會" }, { "id": 3, "text": "達特茅斯會議" }, { "id": 4, "text": "國際機器人聯合會議" }], "answer": [3], "explanation": "<summary>答案與解析</summary>\n\n[正確答案] ✅ 3) 達特茅斯會議（Dartmouth Conference, 1956）\n\n[詳解]  \n1956 年夏天於美國達特茅斯學院舉辦，John McCarthy 等人首次正式使用「Artificial Intelligence」一詞，被視為 AI 的濫觴。\n\n[各選項解析]  \n- 1) 國家測試研討會：沒有與 AI 術語誕生直接相關的經典事件。  \n- 2) 世界電腦高峰會：泛稱，非 1956 年那場歷史關鍵會議。  \n- ✅ 3) 達特茅斯會議：AI 名稱與研究計畫的源頭。  \n- 4) 國際機器人聯合會議：屬機器人領域會議，與術語提出無關。\n\n[補充比較]  \nAI 里程碑：1956 達特茅斯 → 1970s/80s 專家系統 → 2010s 深度學習大爆發。" },
+                        { "id": "0002", "question": "哪種 AI 擅長執行「特定任務」，如語音辨識或下棋？", "options": [{ "id": 1, "text": "狹義 AI(Narrow AI)" }, { "id": 2, "text": "通用 AI(General AI)" }, { "id": 3, "text": "超級 AI(Super AI)" }, { "id": 4, "text": "情感 AI(Emotional AI)" }], "answer": [1], "explanation": "<summary>答案與解析</summary>\n\n[正確答案] ✅ 1) 狹義 AI（Narrow AI）\n\n[詳解]  \n針對單一或窄領域任務設計與最佳化的系統，是現今最常見、最落地的 AI 型態。\n\n[各選項解析]  \n- ✅ 1) 狹義 AI：適合單任務（影像分類、ASR、AlphaGo 等）。  \n- 2) 通用 AI（AGI）：目標是跨任務泛化，目前尚未實現。  \n- 3) 超級 AI（ASI）：假想層級，在各面向全面超越人類。  \n- 4) 情感 AI：聚焦情緒辨識與情感互動，非「特定任務型」這種總類。\n\n[補充比較]  \nNarrow（當代實作） → AGI（人類等級泛化） → ASI（超越人類）。" },
+                        { "id": "0003", "question": "圖靈提出的測試，用以判斷機器是否表現出與人類無法區分的智慧行為，稱為？", "options": [{ "id": 1, "text": "羅森布拉特感知機" }, { "id": 2, "text": "中文房間論證" }, { "id": 3, "text": "萊特希爾報告" }, { "id": 4, "text": "圖靈測試(Turing Test)" }], "answer": [4], "explanation": "<summary>答案與解析</summary>\n\n[正確答案] ✅ 4) 圖靈測試（Turing Test）\n\n[詳解]  \n若評審僅透過對話無法分辨對象是人或機器，即視為機器通過測試，是一種可操作的智慧判準。\n\n[各選項解析]  \n- 1) 感知機：早期神經網路模型，非測試。  \n- 2) 中文房間：Searle 的哲學反思實驗，用來質疑「是否真正理解」。  \n- 3) 萊特希爾報告：1973 英國對 AI 的評估報告，非測試。  \n- ✅ 4) 圖靈測試：圖靈提出的經典智慧檢驗方式。\n\n[補充比較]  \n圖靈測試重「功能表現」，中文房間重「心智理解」之哲學爭論。" }
+                    ];
+                    this.syncStatsWithQuestions();
+                    this.numQuestions = Math.min(10, this.questions.length);
+                },
+                downloadQuestions() {
+                    if (!this.questions?.length) { alert('尚未載入題庫'); return; }
+                    downloadJSON(this.questions, `question_${nowStamp()}.json`);
+                },
+
+                // —— 紀錄（第二個 JSON）處理 ——
+                defaultStat(id) {
+                    return { id, attempts: 0, wrong: 0, correct: 0, lastSelected: [], easy: false, lastAnsweredAt: null, totalTimeSec: 0, avgTimeSec: 0 };
+                },
+                syncStatsWithQuestions() {
+                    const map = { ...this.stats };
+                    for (const q of this.questions) { if (!map[q.id]) map[q.id] = this.defaultStat(q.id); }
+                    // 移除已不在題庫中的紀錄（保守：先保留，不移除）
+                    this.stats = map;
+                    this.saveStatsToLS();
+                },
+                loadStatsFromLS() {
+                    try { this.stats = JSON.parse(localStorage.getItem('quizStats') || '{}') || {}; }
+                    catch { this.stats = {}; }
+                },
+                saveStatsToLS() { localStorage.setItem('quizStats', JSON.stringify(this.stats)); },
+                exportStats() { downloadJSON(this.stats, `quiz_stats_${nowStamp()}.json`); },
+                async importStatsFile(e) {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    try {
+                        const text = await fileToText(file); const incoming = JSON.parse(text) || {};
+                        // 合併策略：相同題號的 attempts/wrong/correct/時間相加；easy 取 OR；lastSelected/lastAnsweredAt 取較新
+                        const merged = { ...this.stats };
+                        for (const [id, s] of Object.entries(incoming)) {
+                            if (!merged[id]) { merged[id] = s; continue; }
+                            const cur = merged[id];
+                            merged[id] = {
+                                id,
+                                attempts: (cur.attempts || 0) + (s.attempts || 0),
+                                wrong: (cur.wrong || 0) + (s.wrong || 0),
+                                correct: (cur.correct || 0) + (s.correct || 0),
+                                lastSelected: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.lastSelected : cur.lastSelected) || [],
+                                easy: !!(cur.easy || s.easy),
+                                lastAnsweredAt: Math.max(cur.lastAnsweredAt || 0, s.lastAnsweredAt || 0) || null,
+                                totalTimeSec: (cur.totalTimeSec || 0) + (s.totalTimeSec || 0),
+                                avgTimeSec: 0,
+                            };
+                            const att = merged[id].attempts || 0; merged[id].avgTimeSec = att ? (merged[id].totalTimeSec / att) : 0;
+                        }
+                        this.stats = merged; this.saveStatsToLS();
+                        alert('匯入完成！');
+                    } catch (err) { alert('匯入失敗：' + err.message); }
+                    e.target.value = '';
+                },
+                clearAllStats() { if (confirm('清空所有作答紀錄？')) { this.stats = {}; this.saveStatsToLS(); } },
+                toggleEasy(id) { if (!this.stats[id]) return; this.stats[id].easy = !this.stats[id].easy; this.saveStatsToLS(); },
+                clearOne(id) { if (!this.stats[id]) return; if (confirm(`清除此題（${id}）的紀錄？`)) { this.stats[id] = this.defaultStat(id); this.saveStatsToLS(); } },
+
+                // —— 建立出題清單 ——
+                startQuiz(mode) {
+                    this.mode = mode; this.view = 'quiz'; this.currentIndex = 0; this.answers = {}; this.resultMap = {}; this.easyMarkAll = {}; this.startTime = Date.now();
+                    const all = this.questions.slice();
+                    // 過濾：排除已標簡單
+                    let pool = all.filter(q => !this.excludeEasy || !(this.stats[q.id]?.easy));
+
+                    if (mode === 'wrongOnly') {
+                        pool = pool.filter(q => (this.stats[q.id]?.wrong || 0) > 0);
+                    }
+
+                    if (mode === 'review') {
+                        // 錯題優先：依錯誤率、嘗試數排序
+                        pool.sort((a, b) => {
+                            const sa = this.stats[a.id] || {}, sb = this.stats[b.id] || {};
+                            const ar = (sa.attempts ? sa.wrong / sa.attempts : 0), br = (sb.attempts ? sb.wrong / sb.attempts : 0);
+                            if (br !== ar) return br - ar;  // 高錯率優先
+                            return (sb.attempts || 0) - (sa.attempts || 0); // 嘗試多者優先
+                        });
+                    } else if (this.shuffle) {
+                        // 隨機洗牌
+                        for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[pool[i], pool[j]] = [pool[j], pool[i]]; }
+                    }
+
+                    this.quizSet = pool.slice(0, Math.min(this.numQuestions, pool.length));
+                    // 初始化已選答案容器
+                    this.quizSet.forEach(q => { this.answers[q.id] = new Set(); this.easyMarkAll[q.id] = false; });
+                },
+
+                // —— 一頁一題：導覽與收尾 ——
+                prev() { if (this.currentIndex > 0) { this.currentIndex--; window.scrollTo({ top: 0, behavior: 'smooth' }); } },
+                next() { if (this.currentIndex < this.quizSet.length - 1) { this.currentIndex++; window.scrollTo({ top: 0, behavior: 'smooth' }); } },
+                finishAndSummary() {
+                    // 計算本輪統計（以 resultMap 為準；單題模式尚未提交的不算）
+                    const ids = Object.keys(this.resultMap);
+                    const correct = ids.filter(id => this.resultMap[id] === 'correct').length;
+                    const wrong = ids.filter(id => this.resultMap[id] === 'wrong').length;
+                    this.summary = { total: ids.length, correct, wrong };
+                    this.view = 'summary';
+                },
+
+                // —— 一頁所有題：批改 ——
+                toggleAnswer(qid, optId, isMulti, ev) {
+                    if (!this.answers[qid]) this.answers[qid] = new Set();
+                    const set = this.answers[qid];
+                    if (isMulti) { ev.target.checked ? set.add(optId) : set.delete(optId); }
+                    else { this.answers[qid] = new Set([optId]); }
+                },
+                submitAll() {
+                    let any = false;
+                    for (const q of this.quizSet) {
+                        const picked = Array.from(this.answers[q.id] || []);
+                        if (picked.length === 0) continue; // 未作答的不列入統計
+                        any = true;
+                        const ok = this.isCorrectAnswer(q.answer, picked);
+                        // 更新紀錄
+                        this.applyResult(q.id, ok, picked, this.easyMarkAll[q.id]);
+                        this.resultMap[q.id] = ok ? 'correct' : 'wrong';
+                    }
+                    if (!any) { alert('尚未作答任何題目'); return; }
+                    this.saveStatsToLS();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                // —— 共用：正誤判定與紀錄套用 ——
+                isCorrectAnswer(ansArr, picked) {
+                    const a = new Set((ansArr || []).map(Number));
+                    const b = new Set((picked || []).map(Number));
+                    if (a.size !== b.size) return false;
+                    for (const v of a) { if (!b.has(v)) return false; }
+                    return true;
+                },
+                applyResult(qid, ok, picked, markEasy) {
+                    if (!this.stats[qid]) this.stats[qid] = this.defaultStat(qid);
+                    const s = this.stats[qid];
+                    s.attempts = (s.attempts || 0) + 1;
+                    s.wrong = (s.wrong || 0) + (ok ? 0 : 1);
+                    s.correct = (s.correct || 0) + (ok ? 1 : 0);
+                    s.lastSelected = [...picked];
+                    s.lastAnsweredAt = Date.now();
+                    // 簡單標記：僅在答對且有勾選時才成立
+                    if (ok && markEasy) s.easy = true;
+                    // 時間：此處取整卷平均；單題模式會在子元件回寫精準時間
+                    const sec = 0; s.totalTimeSec = (s.totalTimeSec || 0) + sec; s.avgTimeSec = (s.attempts ? s.totalTimeSec / s.attempts : 0);
+                },
+
+                // —— 摘要資料容器 ——
+                summary: { total: 0, correct: 0, wrong: 0 },
+            }
+        }
+
+        // —— 單題元件 VM ——
+        function questionVM(q) {
+            return {
+                q,
+                stat: null,
+                isMulti: (q.answer?.length || 0) > 1,
+                selected: new Set(),
+                hasResult: false,
+                isCorrect: false,
+                expOpen: false,
+                markEasy: false,
+                startTs: 0,
+                qInit() {
+                    // 將外層的暫存選項帶進來（若有）
+                    const root = this.$root;
+                    this.stat = root.stats[q.id] || root.defaultStat(q.id);
+                    if (root.answers[q.id]) this.selected = new Set(root.answers[q.id]);
+                    this.startTs = Date.now();
+                },
+                optionClass(id) {
+                    if (!this.hasResult) return '';
+                    const correctSet = new Set((this.q.answer || []).map(Number));
+                    const picked = this.selected.has(id);
+                    if (correctSet.has(id) && picked) return 'option-correct';
+                    if (!correctSet.has(id) && picked) return 'option-wrong';
+                    return '';
+                },
+                toggle(id, ev) {
+                    if (this.isMulti) { ev.target.checked ? this.selected.add(id) : this.selected.delete(id); }
+                    else { this.selected = new Set([id]); }
+                    // 同步回外層
+                    this.$root.answers[this.q.id] = new Set(this.selected);
+                },
+                resetCurrent() { this.selected.clear(); this.hasResult = false; this.isCorrect = false; this.expOpen = false; this.markEasy = false; this.$root.answers[this.q.id] = new Set(); },
+                submitOne() {
+                    const picked = Array.from(this.selected);
+                    if (picked.length === 0) { alert('請先選擇答案'); return; }
+                    const ok = this.$root.isCorrectAnswer(this.q.answer, picked);
+                    this.hasResult = true; this.isCorrect = ok;
+                    const usedSec = Math.max(0, Math.round((Date.now() - this.startTs) / 1000));
+                    // 回寫紀錄
+                    if (!this.$root.stats[this.q.id]) this.$root.stats[this.q.id] = this.$root.defaultStat(this.q.id);
+                    const s = this.$root.stats[this.q.id];
+                    s.attempts = (s.attempts || 0) + 1;
+                    s.wrong = (s.wrong || 0) + (ok ? 0 : 1);
+                    s.correct = (s.correct || 0) + (ok ? 1 : 0);
+                    s.lastSelected = [...picked];
+                    s.lastAnsweredAt = Date.now();
+                    s.totalTimeSec = (s.totalTimeSec || 0) + usedSec;
+                    s.avgTimeSec = (s.attempts ? s.totalTimeSec / s.attempts : 0);
+                    if (ok && this.markEasy) s.easy = true; // 需答對才成立
+                    this.$root.resultMap[this.q.id] = ok ? 'correct' : 'wrong';
+                    this.$root.saveStatsToLS();
+                    if (!ok && this.$root.expandWrong) this.expOpen = true;
+                },
+                onSubmitFromParent(e) { if (e.detail?.id === this.q.id) { this.submitOne(); } },
+            }
+        }
+    </script>
+
+    <!-- Bootstrap JS（僅供折疊/元件） -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
