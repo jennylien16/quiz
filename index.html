@@ -616,6 +616,13 @@
 
     </div>
 
+    <div x-show="view==='quiz'" class="position-fixed" style="right:1rem; bottom:1rem; z-index:1000;">
+        <div class="d-flex flex-column gap-2">
+            <button class="btn btn-outline-secondary" @click="scrollToTop()"><i class="bi bi-arrow-up"></i></button>
+            <button class="btn btn-outline-secondary" @click="scrollToBottom()"><i class="bi bi-arrow-down"></i></button>
+        </div>
+    </div>
+
     <script>
         // —— 工具函數 ——
         const md = (text) => window.marked ? window.marked.parse(text) : text;
@@ -928,6 +935,9 @@
                     this.showScore = false;
                 },
 
+                scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); },
+                scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); },
+
                 // —— 一頁所有題：批改 ——
                 toggleAnswer(qid, optId, isMulti, ev) {
                     if (!this.answers[qid]) this.answers[qid] = new Set();
@@ -1010,20 +1020,23 @@
                 expOpen: false,
                 markEasy: false,
                 markUnsure: false,
+                root: null,
                 qInit() {
+                    // 取得根元件資料
+                    this.root = Alpine.$data(this.$root);
                     // 監聽根元件的索引與題組變化以載入對應題目
-                    this.$watch(() => this.$root.currentIndex, i => {
-                        this.loadQuestion(this.$root.quizSet[i]);
+                    this.$watch(() => this.root.currentIndex, i => {
+                        this.loadQuestion(this.root.quizSet[i]);
                     });
-                    this.$watch(() => this.$root.quizSet, () => {
-                        this.loadQuestion(this.$root.quizSet[this.$root.currentIndex]);
+                    this.$watch(() => this.root.quizSet, () => {
+                        this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
                     });
-                    this.loadQuestion(this.$root.quizSet[this.$root.currentIndex]);
+                    this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
                 },
                 loadQuestion(q) {
                     if (!q) return;
                     this.q = q;
-                    const root = this.$root;
+                    const root = this.root;
                     this.stat = root.stats[q.id] || root.defaultStat(q.id);
                     this.isMulti = (q.answer?.length || 0) > 1;
                     this.selected = new Set(root.answers[q.id] || []);
@@ -1045,17 +1058,25 @@
                     if (this.isMulti) { ev.target.checked ? this.selected.add(id) : this.selected.delete(id); }
                     else { this.selected = new Set([id]); }
                     // 同步回外層
-                    this.$root.answers[this.q.id] = new Set(this.selected);
+                    this.root.answers[this.q.id] = new Set(this.selected);
                 },
-                    resetCurrent() { this.selected.clear(); this.hasResult = false; this.isCorrect = false; this.expOpen = false; this.markEasy = false; this.markUnsure = false; this.$root.answers[this.q.id] = new Set(); },
+                resetCurrent() {
+                    this.selected.clear();
+                    this.hasResult = false;
+                    this.isCorrect = false;
+                    this.expOpen = false;
+                    this.markEasy = false;
+                    this.markUnsure = false;
+                    this.root.answers[this.q.id] = new Set();
+                },
                 submitOne() {
                     const picked = Array.from(this.selected);
                     if (picked.length === 0) { alert('請先選擇答案'); return; }
-                    const ok = this.$root.isCorrectAnswer(this.q.answer, picked);
+                    const ok = this.root.isCorrectAnswer(this.q.answer, picked);
                     this.hasResult = true; this.isCorrect = ok;
                     // 回寫紀錄
-                    if (!this.$root.stats[this.q.id]) this.$root.stats[this.q.id] = this.$root.defaultStat(this.q.id);
-                    const s = this.$root.stats[this.q.id];
+                    if (!this.root.stats[this.q.id]) this.root.stats[this.q.id] = this.root.defaultStat(this.q.id);
+                    const s = this.root.stats[this.q.id];
                     s.attempts = (s.attempts || 0) + 1;
                     s.wrong = (s.wrong || 0) + (ok ? 0 : 1);
                     s.correct = (s.correct || 0) + (ok ? 1 : 0);
@@ -1063,9 +1084,9 @@
                     s.lastAnsweredAt = Date.now();
                     if (ok && this.markEasy) s.easy = true; // 需答對才成立
                     s.unsure = !!this.markUnsure;
-                    this.$root.resultMap[this.q.id] = ok ? 'correct' : 'wrong';
-                    this.$root.saveStatsToLS();
-                    if (!ok && this.$root.expandWrong) this.expOpen = true;
+                    this.root.resultMap[this.q.id] = ok ? 'correct' : 'wrong';
+                    this.root.saveStatsToLS();
+                    if (!ok && this.root.expandWrong) this.expOpen = true;
                 },
                 onSubmitFromParent(e) { if (e.detail?.id === this.q.id) { this.submitOne(); } },
             }
