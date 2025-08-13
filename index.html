@@ -234,6 +234,9 @@
                                 尚未載入題庫，可先載入下方「範例題庫」試用。
                             </div>
                             <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button class="btn btn-sm btn-outline-secondary" @click="loadQuestionsFromDrive()">
+                                    <i class="bi bi-cloud-arrow-down"></i> 雲端硬碟
+                                </button>
                                 <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
                                     <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
                                 </button>
@@ -262,6 +265,9 @@
                                     <input type="file" class="d-none" accept=".json,application/json"
                                         @change="importStatsFile($event)" />
                                 </label>
+                                <button class="btn btn-sm btn-outline-secondary" @click="importStatsFromDrive()">
+                                    <i class="bi bi-cloud-arrow-down"></i> 雲端
+                                </button>
                                 <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()">
                                     <i class="bi bi-trash3" aria-hidden="true"></i> 清空
                                 </button>
@@ -738,6 +744,9 @@
                                 <input type="file" class="d-none" accept=".json,application/json"
                                     @change="importBugsFile($event)" />
                             </label>
+                            <button class="btn btn-sm btn-outline-secondary" @click="importBugsFromDrive()" title="從雲端匯入">
+                                <i class="bi bi-cloud-arrow-down"></i> 雲端
+                            </button>
                             <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"
                                 title="可以把問題一鍵複製傳給我哈哈"><i class="bi bi-clipboard"></i> 全部</button>
                             <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()"
@@ -895,6 +904,48 @@
             IN_PROGRESS: '處理中',
             DONE: '已完成'
         });
+
+        // Google Drive Picker configuration
+        const GOOGLE_API_KEY = 'YOUR_API_KEY';
+        const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID';
+
+        function pickFromDrive(onPick, mimeType = 'application/json') {
+            if (!window.gapi) { alert('Google API 載入失敗'); return; }
+            gapi.load('auth', {
+                callback: () => {
+                    gapi.auth.authorize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        scope: ['https://www.googleapis.com/auth/drive.readonly'],
+                        immediate: false,
+                    }, authResult => {
+                        if (authResult && !authResult.error) {
+                            const oauthToken = authResult.access_token;
+                            gapi.load('picker', {
+                                callback: () => {
+                                    const view = new google.picker.DocsView()
+                                        .setIncludeFolders(false)
+                                        .setMimeTypes(mimeType);
+                                    const picker = new google.picker.PickerBuilder()
+                                        .setOAuthToken(oauthToken)
+                                        .setDeveloperKey(GOOGLE_API_KEY)
+                                        .addView(view)
+                                        .setCallback(data => {
+                                            if (data.action === google.picker.Action.PICKED) {
+                                                const id = data.docs[0].id;
+                                                fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`, {
+                                                    headers: { 'Authorization': 'Bearer ' + oauthToken }
+                                                }).then(r => r.text()).then(onPick);
+                                            }
+                                        })
+                                        .build();
+                                    picker.setVisible(true);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
 
         // —— Alpine Root ——
         function quizApp() {
@@ -1060,6 +1111,20 @@
                         alert('載入題庫失敗：' + err.message);
                     }
                 },
+                loadQuestionsFromDrive() {
+                    pickFromDrive(text => {
+                        try {
+                            const arr = JSON.parse(text);
+                            if (!Array.isArray(arr)) throw new Error('題庫 JSON 格式需為陣列');
+                            this.questions = arr;
+                            this.syncStatsWithQuestions();
+                            this.syncBugsWithQuestions();
+                            this.numQuestions = Math.min(50, this.questions.length || 50);
+                        } catch (err) {
+                            alert('載入題庫失敗：' + err.message);
+                        }
+                    });
+                },
                 loadSample() {
                     // 三題示範（與你提供的格式一致）
                     this.questions = [
@@ -1166,6 +1231,30 @@
                     } catch (err) { alert('匯入失敗：' + err.message); }
                     e.target.value = '';
                 },
+                importStatsFromDrive() {
+                    pickFromDrive(text => {
+                        try {
+                            const incoming = JSON.parse(text) || {};
+                            const merged = { ...this.stats };
+                            for (const [id, s] of Object.entries(incoming)) {
+                                if (!merged[id]) { merged[id] = s; continue; }
+                                const cur = merged[id];
+                                merged[id] = {
+                                    id,
+                                    attempts: (cur.attempts || 0) + (s.attempts || 0),
+                                    wrong: (cur.wrong || 0) + (s.wrong || 0),
+                                    correct: (cur.correct || 0) + (s.correct || 0),
+                                    lastSelected: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.lastSelected : cur.lastSelected) || [],
+                                    easy: !!(cur.easy || s.easy),
+                                    unsure: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.unsure : cur.unsure) || false,
+                                    lastAnsweredAt: Math.max(cur.lastAnsweredAt || 0, s.lastAnsweredAt || 0) || null,
+                                };
+                            }
+                            this.stats = merged; this.saveStatsToLS();
+                            alert('匯入完成！');
+                        } catch (err) { alert('匯入失敗：' + err.message); }
+                    });
+                },
                 clearAllStats() { if (confirm('清空所有作答紀錄？')) { this.stats = {}; this.saveStatsToLS(); } },
                 refreshStatsIds() {
                     const valid = new Set(this.questions.map(q => q.id));
@@ -1262,6 +1351,18 @@
                         alert('匯入完成！');
                     } catch (err) { alert('匯入失敗：' + err.message); }
                     e.target.value = '';
+                },
+                importBugsFromDrive() {
+                    pickFromDrive(text => {
+                        try {
+                            const arr = JSON.parse(text);
+                            if (!Array.isArray(arr)) throw new Error('格式錯誤');
+                            this.bugs = arr.map(b => this.normalizeBug(b));
+                            this.syncBugsWithQuestions();
+                            this.saveBugsToLS();
+                            alert('匯入完成！');
+                        } catch (err) { alert('匯入失敗：' + err.message); }
+                    });
                 },
                 openQbankPanel() {
                     const panel = document.getElementById('qbankPanel');
@@ -1613,6 +1714,7 @@
     </script>
 
     <!-- Bootstrap JS（僅供折疊/元件） -->
+    <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
