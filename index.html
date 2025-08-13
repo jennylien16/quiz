@@ -368,65 +368,58 @@
                     </template>
 
                     <template x-for="(q, idx) in quizSet" :key="q.id">
-                        <div class="border rounded-4 p-3 p-md-4 mb-3">
-                            <template x-if="!(resultMap[q.id]==='correct' && !unsureMarkAll[q.id])">
+                        <details class="border rounded-4 p-3 p-md-4 mb-3" :open="!(resultMap[q.id]==='correct' && !unsureMarkAll[q.id])">
+                            <summary class="d-flex align-items-center justify-content-between pointer">
+                                <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
+                                <span class="badge bg-success" x-show="resultMap[q.id]==='correct' && !unsureMarkAll[q.id]">答對</span>
+                            </summary>
+                            <div class="d-flex align-items-start justify-content-between mt-3">
                                 <div>
-                                    <div class="d-flex align-items-start justify-content-between">
+                                    <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
+                                </div>
+                                <div class="text-end d-flex flex-column align-items-end">
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)">
+                                        <i class="bi bi-clipboard"></i> 複製
+                                    </button>
+                                    <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
+                                    <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <template x-for="opt in q.options" :key="opt.id">
+                                    <label class="option-item d-flex gap-2 align-items-start">
+                                        <input :type="(q.answer?.length||0)>1 ? 'checkbox':'radio'" class="form-check-input mt-1" :name="'opt_'+q.id" :value="opt.id" @change="toggleAnswer(q.id, opt.id, (q.answer?.length||0)>1, $event)" :checked="(answers[q.id]||new Set()).has(opt.id)" />
                                         <div>
-                                            <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
-                                            <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
+                                            <div class="fw-semibold" x-text="opt.text"></div>
+                                            <div class="small text-secondary" x-show="debugMode">id: <span class="mono" x-text="opt.id"></span></div>
                                         </div>
-                                        <div class="text-end d-flex flex-column align-items-end">
-                                            <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)">
-                                                <i class="bi bi-clipboard"></i> 複製
-                                            </button>
-                                            <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
-                                            <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
-                                        </div>
-                                    </div>
+                                    </label>
+                                </template>
+                            </div>
 
-                                    <div class="mt-3">
-                                        <template x-for="opt in q.options" :key="opt.id">
-                                            <label class="option-item d-flex gap-2 align-items-start">
-                                                <input :type="(q.answer?.length||0)>1 ? 'checkbox':'radio'" class="form-check-input mt-1" :name="'opt_'+q.id" :value="opt.id" @change="toggleAnswer(q.id, opt.id, (q.answer?.length||0)>1, $event)" :checked="(answers[q.id]||new Set()).has(opt.id)" />
-                                                <div>
-                                                    <div class="fw-semibold" x-text="opt.text"></div>
-                                                    <div class="small text-secondary" x-show="debugMode">id: <span class="mono" x-text="opt.id"></span></div>
-                                                </div>
-                                            </label>
-                                        </template>
-                                    </div>
-
-                                    <div class="d-flex flex-wrap gap-3 mt-2">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" :id="'easy_'+q.id" x-model="easyMarkAll[q.id]">
-                                            <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（需答對才算）</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" :id="'unsure_'+q.id" x-model="unsureMarkAll[q.id]">
-                                            <label class="form-check-label" :for="'unsure_'+q.id">這題我不確定</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-2" x-show="resultMap[q.id]">
-                                        <div class="alert" :class="resultMap[q.id]==='correct' ? 'alert-success' : 'alert-danger'">
-                                            <div class="fw-semibold" x-text="resultMap[q.id]==='correct'?'答對了！':'答錯囉～'"></div>
-                                            <div class="small mt-1">正確答案：<span class="mono" x-text="q.answer.join(', ')"></span></div>
-                                        </div>
-                                        <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
-                                            <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析</summary>
-                                            <div class="mt-2" x-html="md(q.explanation)"></div>
-                                        </details>
-                                    </div>
+                            <div class="d-flex flex-wrap gap-3 mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" :id="'easy_'+q.id" x-model="easyMarkAll[q.id]">
+                                    <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（需答對才算）</label>
                                 </div>
-                            </template>
-                            <template x-if="resultMap[q.id]==='correct' && !unsureMarkAll[q.id]">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
-                                    <span class="badge bg-success">答對</span>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" :id="'unsure_'+q.id" x-model="unsureMarkAll[q.id]">
+                                    <label class="form-check-label" :for="'unsure_'+q.id">這題我不確定</label>
                                 </div>
-                            </template>
-                        </div>
+                            </div>
+
+                            <div class="mt-2" x-show="resultMap[q.id]">
+                                <div class="alert" :class="resultMap[q.id]==='correct' ? 'alert-success' : 'alert-danger'">
+                                    <div class="fw-semibold" x-text="resultMap[q.id]==='correct'?'答對了！':'答錯囉～'"></div>
+                                    <div class="small mt-1">正確答案：<span class="mono" x-text="q.answer.join(', ')"></span></div>
+                                </div>
+                                <details class="mt-2" :open="resultMap[q.id]==='wrong' && $root.expandWrong">
+                                    <summary class="fw-semibold pointer"><i class="bi bi-journal-text"></i> 答案與解析</summary>
+                                    <div class="mt-2" x-html="md(q.explanation)"></div>
+                                </details>
+                            </div>
+                        </details>
                     </template>
 
                     <div class="d-flex justify-content-between mt-3">
