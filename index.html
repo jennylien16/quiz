@@ -247,15 +247,11 @@
                         <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 進度：<strong
                                 x-text="quizSet.length ? currentIndex + 1 : 0"></strong>/<span
                                 x-text="quizSet.length"></span> ｜ 時間：<strong x-text="timeText"></strong></div>
-                        <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
-                                    class="bi bi-house"></i> 回首頁</button>
-                            <button class="btn btn-sm btn-outline-secondary" :disabled="currentIndex===0"
-                                @click="prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
-                            <button class="btn btn-sm btn-outline-secondary" :disabled="currentIndex>=quizSet.length-1"
-                                @click="next()">下一題 <i class="bi bi-chevron-right"></i></button>
-                        </div>
-                    </div>
+        <div>
+            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
+                    class="bi bi-house"></i> 回首頁</button>
+        </div>
+    </div>
 
                     <template x-if="quizSet.length===0">
                         <div class="alert alert-warning mt-3">此模式下沒有可出題目（可能沒有錯題或全部被標記為簡單）。</div>
@@ -314,8 +310,8 @@
                                     <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（<span
                                             class="text-secondary">需答對才算</span>）</label>
                                 </div>
-                                <button class="btn btn-primary" @click="submitOne()"><i class="bi bi-check2-circle"
-                                        aria-hidden="true"></i> 提交本題</button>
+                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex===0" @click="$root.prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
+                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex>=$root.quizSet.length-1" @click="$root.next()">下一題 <i class="bi bi-chevron-right"></i></button>
                                 <button class="btn btn-outline-secondary" @click="resetCurrent()"><i
                                         class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> 重新作答</button>
                             </div>
@@ -340,14 +336,8 @@
                     <div class="d-flex justify-content-between mt-4" x-show="quizSet.length>0">
                           <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
                           回首頁</button>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-secondary" :disabled="currentIndex===0" @click="prev()"><i
-                                    class="bi bi-chevron-left"></i> 上一題</button>
-                            <button class="btn btn-outline-secondary" :disabled="currentIndex>=quizSet.length-1"
-                                @click="next()">下一題 <i class="bi bi-chevron-right"></i></button>
-                            <button class="btn btn-success" @click="finishAndSummary()"><i class="bi bi-flag"></i>
+                        <button class="btn btn-success" @click="finishAndSummary()"><i class="bi bi-flag"></i>
                                 結束並看成績</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -506,9 +496,10 @@
                             </ul>
                         </div>
                     </template>
-                    <div class="d-flex gap-2 mt-3">
+                    <div class="d-flex flex-wrap gap-2 mt-3">
                           <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
                           回首頁</button>
+                        <button class="btn btn-outline-danger" x-show="summary.wrong>0" @click="reviewWrong()"><i class="bi bi-journal-text"></i> 查看本次錯題</button>
                         <button class="btn btn-primary" @click="startQuiz(mode)"><i class="bi bi-arrow-repeat"></i>
                             同模式再來一輪</button>
                     </div>
@@ -778,6 +769,7 @@
             return {
                 // 狀態
                 view: 'home',            // home | quiz | summary | preview
+                prevView: 'home',
                 pageMode: 'all',         // one | all
                 mode: 'normal',          // normal | review | wrongOnly
                 get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題' }[this.mode] },
@@ -925,11 +917,13 @@
                 },
 
                 showAllWithExp() {
+                    this.prevView = this.view;
                     this.previewTitle = '所有題目與詳解';
                     this.previewSet = [...this.questions].sort((a, b) => a.id.localeCompare(b.id));
                     this.view = 'preview';
                 },
                 showWrongWithExp() {
+                    this.prevView = this.view;
                     const arr = this.questions.filter(q => {
                         const s = this.stats[q.id];
                         return s && s.wrong > 0;
@@ -944,7 +938,15 @@
                     this.previewSet = arr;
                     this.view = 'preview';
                 },
-                exitPreview() { this.view = 'home'; },
+                reviewWrong() {
+                    this.prevView = this.view;
+                    const wrongIds = this.summary.wrongList.map(item => item.id);
+                    const arr = this.quizSet.filter(q => wrongIds.includes(q.id));
+                    this.previewTitle = '本次錯題與詳解';
+                    this.previewSet = arr;
+                    this.view = 'preview';
+                },
+                exitPreview() { this.view = this.prevView || 'home'; },
 
                 // —— 紀錄（第二個 JSON）處理 ——
                 defaultStat(id) {
@@ -1099,13 +1101,9 @@
                     this.quizSet = pool.slice(0, Math.min(this.numQuestions, pool.length));
                     // 初始化已選答案容器
                     this.quizSet.forEach(q => { this.answers[q.id] = new Set(); this.easyMarkAll[q.id] = false; this.unsureMarkAll[q.id] = false; });
-                    // 計時：每題固定秒數
-                    if (this.pageMode === 'one') {
-                        this.timeLimitSec = this.perQuestionSec;
-                    } else {
-                        const totalSec = Math.min(60 * 60, this.quizSet.length * this.perQuestionSec);
-                        this.timeLimitSec = totalSec;
-                    }
+                    // 計時：依總題數計算總秒數
+                    const totalSec = Math.min(60 * 60, this.quizSet.length * this.perQuestionSec);
+                    this.timeLimitSec = totalSec;
                     this.startTimer();
                 },
 
@@ -1127,19 +1125,25 @@
                 prev() {
                     if (this.currentIndex > 0) {
                         this.currentIndex--;
-                        if (this.pageMode === 'one') { this.timeLimitSec = this.perQuestionSec; this.startTimer(); }
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 },
                 next() {
                     if (this.currentIndex < this.quizSet.length - 1) {
                         this.currentIndex++;
-                        if (this.pageMode === 'one') { this.timeLimitSec = this.perQuestionSec; this.startTimer(); }
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 },
                 finishAndSummary() {
                     clearInterval(this.timer);
+                    // 批改所有作答
+                    for (const q of this.quizSet) {
+                        const picked = Array.from(this.answers[q.id] || []);
+                        if (picked.length === 0) continue;
+                        const ok = this.isCorrectAnswer(q.answer, picked);
+                        this.applyResult(q.id, ok, picked, this.easyMarkAll[q.id], this.unsureMarkAll[q.id]);
+                        this.resultMap[q.id] = ok ? 'correct' : 'wrong';
+                    }
                     // 以本次出題集為基準計算統計
                     const total = this.quizSet.length;
                     const answeredIds = Object.keys(this.resultMap);
@@ -1152,6 +1156,7 @@
                         return q ? { id: q.id, question: q.question } : { id, question: '' };
                     });
                     this.summary = { total, correct, wrong, unanswered, wrongList };
+                    this.saveStatsToLS();
                     this.view = 'summary';
                 },
 
