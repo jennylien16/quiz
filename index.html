@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>純前端出題系統 v1.0.1｜Alpine.js</title>
+    <title>出題系統 v1.0｜Alpine.js</title>
     <!-- Bootstrap 5 + Icons (純前端好排版) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -94,14 +94,12 @@
 
         <!-- 標題列 -->
         <div class="d-flex align-items-center justify-content-between mb-3">
-            <h1 class="h4 mb-0">純前端出題系統 <span class="small text-secondary" x-text="version"></span> <span class="small text-secondary">｜Alpine.js</span></h1>
+            <h1 class="h4 mb-0">出題系統 <span class="small text-secondary" x-text="version"></span> <span class="small text-secondary">｜Alpine.js</span></h1>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#recordPanel"
-                    aria-expanded="false">
+                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()">
                     <i class="bi bi-collection" aria-hidden="true"></i> 紀錄管理
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#bugPanel"
-                    aria-expanded="false">
+                <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()">
                     <i class="bi bi-bug" aria-hidden="true"></i> Bug 回報
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()">
@@ -196,8 +194,17 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-12 col-md-3">
                         <label class="form-label">出題數</label>
-                        <input type="number" class="form-control" min="1" :max="questions.length||1"
-                            x-model.number="numQuestions" />
+                        <div class="input-group">
+                            <input type="number" class="form-control" min="1" :max="questions.length||1"
+                                x-model.number="numQuestions" />
+                            <select class="form-select" @change="numQuestions = Number($event.target.value)">
+                                <option value="">選擇</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
                         <div class="small text-secondary mt-1">題庫目前：<strong x-text="questions.length"></strong> 題</div>
                     </div>
                     <div class="col-12 col-md-3">
@@ -640,7 +647,7 @@
             <div class="card card-soft">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <h2 class="h6 mb-0">Bug 回報區</h2>
+                        <h2 class="h6 mb-0">Bug 回報區 <small class="text-secondary">(開發者看不到哦，要自行複製給開發者)</small></h2>
                         <div class="d-flex flex-wrap gap-2">
                             <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()"><i class="bi bi-download"></i> 匯出</button>
                             <label class="btn btn-sm btn-outline-primary mb-0">
@@ -796,7 +803,7 @@
                 questions: [],
                 quizSet: [],
                 currentIndex: 0,
-                numQuestions: 10,
+                numQuestions: 50,
                 shuffle: true,
                 excludeEasy: true,
                 expandWrong: true,
@@ -808,7 +815,7 @@
                 previewTitle: '',
                 showHelp: false,
                 debugMode: false,
-                version: 'v1.0.1',
+                version: 'v1.0',
                 // 計時相關
                   perQuestionSec: 120,    // 每題秒數（秒）
                   timer: null,
@@ -823,7 +830,7 @@
 
                 // 紀錄（第二個 JSON）
                 stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, unsure, lastAnsweredAt }
-                filter: { onlyWrong: false, onlyNotEasy: false },
+                filter: { onlyWrong: true, onlyNotEasy: false },
 
                 // Bug 回報資料
                 bugs: [],              // { qid, issue, status, note }
@@ -832,7 +839,7 @@
                 editIndex: -1,
                 bugModal: null,
                 bugModalTitle: '',
-                bugSearch: { qid: '', issue: '', status: '' },
+                bugSearch: { qid: '', issue: '', status: '未處理' },
 
                 get statRows() {
                     let rows = Object.values(this.stats).map(s => ({ ...s }));
@@ -858,16 +865,18 @@
                 },
 
                 async init() {
-                    document.title = `純前端出題系統 ${this.version}｜Alpine.js`;
+                    document.title = `出題系統 ${this.version}｜Alpine.js`;
                     // 從 LocalStorage 載入紀錄
                     this.loadStatsFromLS();
                     this.loadBugsFromLS();
                     if (this.bugs.length === 0) { await this.loadBugsFromFile(); }
                     await this.loadProjectQuestions();
+                    this.syncBugsWithQuestions();
                     // 若 LocalStorage 沒有紀錄，才載入預設紀錄檔
                     if (Object.keys(this.stats).length === 0) {
                         await this.loadStatsFromFile();
                         this.syncStatsWithQuestions();
+                        this.syncBugsWithQuestions();
                     }
                 },
 
@@ -880,7 +889,8 @@
                             if (Array.isArray(arr)) {
                                 this.questions = arr;
                                 this.syncStatsWithQuestions();
-                                this.numQuestions = Math.min(10, this.questions.length || 10);
+                                this.syncBugsWithQuestions();
+                                this.numQuestions = Math.min(50, this.questions.length || 50);
                             }
                         }
                     } catch (err) { console.warn('載入預設題庫失敗', err); }
@@ -917,7 +927,8 @@
                         if (!Array.isArray(arr)) throw new Error('題庫 JSON 格式需為陣列');
                         this.questions = arr;
                         this.syncStatsWithQuestions();
-                        this.numQuestions = Math.min(10, this.questions.length || 10);
+                        this.syncBugsWithQuestions();
+                        this.numQuestions = Math.min(50, this.questions.length || 50);
                     } catch (err) {
                         alert('載入題庫失敗：' + err.message);
                     }
@@ -930,7 +941,8 @@
                         { "id": "0003", "question": "圖靈提出的測試，用以判斷機器是否表現出與人類無法區分的智慧行為，稱為？", "options": [{ "id": 1, "text": "羅森布拉特感知機" }, { "id": 2, "text": "中文房間論證" }, { "id": 3, "text": "萊特希爾報告" }, { "id": 4, "text": "圖靈測試(Turing Test)" }], "answer": [4], "explanation": "<summary>答案與解析</summary>\n\n[正確答案] ✅ 4) 圖靈測試（Turing Test）\n\n[詳解]  \n若評審僅透過對話無法分辨對象是人或機器，即視為機器通過測試，是一種可操作的智慧判準。\n\n[各選項解析]  \n- 1) 感知機：早期神經網路模型，非測試。  \n- 2) 中文房間：Searle 的哲學反思實驗，用來質疑「是否真正理解」。  \n- 3) 萊特希爾報告：1973 英國對 AI 的評估報告，非測試。  \n- ✅ 4) 圖靈測試：圖靈提出的經典智慧檢驗方式。\n\n[補充比較]  \n圖靈測試重「功能表現」，中文房間重「心智理解」之哲學爭論。" }
                     ];
                     this.syncStatsWithQuestions();
-                    this.numQuestions = Math.min(10, this.questions.length);
+                    this.syncBugsWithQuestions();
+                    this.numQuestions = Math.min(50, this.questions.length);
                 },
                 downloadQuestions() {
                     if (!this.questions?.length) { alert('尚未載入題庫'); return; }
@@ -985,6 +997,11 @@
                     // 移除已不在題庫中的紀錄（保守：先保留，不移除）
                     this.stats = map;
                     this.saveStatsToLS();
+                },
+                syncBugsWithQuestions() {
+                    const valid = new Set(this.questions.map(q => q.id));
+                    this.bugs = this.bugs.filter(b => valid.has(b.qid));
+                    this.saveBugsToLS();
                 },
                 loadStatsFromLS() {
                     try { this.stats = JSON.parse(localStorage.getItem('quizStats') || '{}') || {}; }
@@ -1044,11 +1061,16 @@
                     this.bugModal.show();
                 },
                 saveBug() {
-                    if (!this.editBug.qid && !this.editBug.issue) { alert('請填題號或問題'); return; }
+                    if (!this.editBug.qid) { alert('請填題號'); return; }
+                    if (!this.questions.some(q => q.id === this.editBug.qid)) {
+                        alert('題號不存在於題庫');
+                        return;
+                    }
                     const obj = deepClone(this.editBug);
                     if (this.editIndex === -1) { this.bugs.push(obj); }
                     else { this.bugs[this.editIndex] = obj; }
                     this.saveBugsToLS();
+                    this.syncBugsWithQuestions();
                     this.bugModal.hide();
                 },
                 deleteBug(idx) { this.bugs.splice(idx, 1); this.saveBugsToLS(); },
@@ -1067,10 +1089,33 @@
                         const arr = JSON.parse(text);
                         if (!Array.isArray(arr)) throw new Error('格式錯誤');
                         this.bugs = arr;
+                        this.syncBugsWithQuestions();
                         this.saveBugsToLS();
                         alert('匯入完成！');
                     } catch (err) { alert('匯入失敗：' + err.message); }
                     e.target.value = '';
+                },
+                openRecordPanel() {
+                    this.filter.onlyWrong = true;
+                    const panel = document.getElementById('recordPanel');
+                    if (panel) {
+                        const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
+                        panel.addEventListener('shown.bs.collapse', () => {
+                            panel.scrollIntoView({ behavior: 'smooth' });
+                        }, { once: true });
+                        bs.show();
+                    }
+                },
+                openBugPanel() {
+                    this.bugSearch = { qid: '', issue: '', status: '未處理' };
+                    const panel = document.getElementById('bugPanel');
+                    if (panel) {
+                        const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
+                        panel.addEventListener('shown.bs.collapse', () => {
+                            panel.scrollIntoView({ behavior: 'smooth' });
+                        }, { once: true });
+                        bs.show();
+                    }
                 },
                 openBug(qid) {
                     const currentY = window.scrollY;
@@ -1093,7 +1138,7 @@
                         return qMatch && iMatch && sMatch;
                     });
                 },
-                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '' }; },
+                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '未處理' }; },
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
