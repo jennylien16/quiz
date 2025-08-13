@@ -1661,6 +1661,15 @@
                     this.$watch('root.quizSet', () => {
                         this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
                     });
+                    // 監聽「這題我不確定」變化並寫入紀錄
+                    this.$watch('markUnsure', v => {
+                        if (!this.q) return;
+                        if (!this.root.stats[this.q.id]) {
+                            this.root.stats[this.q.id] = this.root.defaultStat(this.q.id);
+                        }
+                        this.root.stats[this.q.id].unsure = v;
+                        this.root.saveStatsToLS();
+                    });
                     this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
                 },
                 loadQuestion(q) {
@@ -1674,7 +1683,7 @@
                     this.isCorrect = false;
                     this.expOpen = false;
                     this.markEasy = false;
-                    this.markUnsure = false;
+                    this.markUnsure = !!this.stat.unsure;
                 },
                 optionClass(id) {
                     if (!this.hasResult) return '';
