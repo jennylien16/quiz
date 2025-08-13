@@ -706,7 +706,7 @@
                                     <tr>
                                         <td class="mono" x-text="b.qid || '-' "></td>
                                         <td x-text="b.issue || '-' "></td>
-                                        <td x-text="b.time ? new Date(b.time).toLocaleString() : '-' "></td>
+                                        <td x-text="b.time ? new Date(b.time).toLocaleDateString() : '-' "></td>
                                         <td x-text="b.note || '-' "></td>
                                         <td>
                                             <select class="form-select form-select-sm" x-model="b.status" @change="saveBugsToLS()">
@@ -856,7 +856,7 @@
                 editIndex: -1,
                 bugModal: null,
                 bugModalTitle: '',
-                bugSearch: { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED },
+                bugSearch: { qid: '', issue: '', status: '' },
 
                 get statRows() {
                     let rows = Object.values(this.stats).map(s => ({ ...s }));
@@ -1155,7 +1155,7 @@
                     }
                 },
                 openBugPanel() {
-                    this.bugSearch = { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED };
+                    this.bugSearch = { qid: '', issue: '', status: '' };
                     const panel = document.getElementById('bugPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
@@ -1189,7 +1189,7 @@
                         return qMatch && iMatch && sMatch;
                     });
                 },
-                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED }; },
+                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '' }; },
 
                 normalizeStatus(s) {
                     if (s === '已處理') return BUG_STATUS.DONE;
