@@ -591,6 +591,7 @@
                                 <input class="form-check-input" type="checkbox" id="onlyNotEasy" x-model="filter.onlyNotEasy">
                                 <label class="form-check-label" for="onlyNotEasy">只看已標非簡單</label>
                             </div>
+                            <button class="btn btn-sm btn-outline-secondary" @click="refreshStatsIds()"><i class="bi bi-arrow-clockwise"></i> 更新題號</button>
                             <!-- <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
                                     class="bi bi-download"></i> 匯出</button> -->
                             <button class="btn btn-sm btn-outline-primary" @click="showAllWithExp()"><i class="bi bi-journal-text"></i> 題庫+詳解</button>
@@ -1058,6 +1059,17 @@
                     e.target.value = '';
                 },
                 clearAllStats() { if (confirm('清空所有作答紀錄？')) { this.stats = {}; this.saveStatsToLS(); } },
+                refreshStatsIds() {
+                    const valid = new Set(this.questions.map(q => q.id));
+                    for (const id of Object.keys(this.stats)) {
+                        if (valid.has(id)) {
+                            this.stats[id].id = id;
+                        } else {
+                            delete this.stats[id];
+                        }
+                    }
+                    this.saveStatsToLS();
+                },
                 toggleEasy(id) { if (!this.stats[id]) return; this.stats[id].easy = !this.stats[id].easy; this.saveStatsToLS(); },
                 clearOne(id) { if (!this.stats[id]) return; if (confirm(`清除此題（${id}）的紀錄？`)) { this.stats[id] = this.defaultStat(id); this.saveStatsToLS(); } },
 
