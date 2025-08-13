@@ -643,21 +643,26 @@
 
                     <div class="row g-2 mt-3">
                         <div class="col-12 col-md-2">
-                            <input type="text" class="form-control" placeholder="題號" x-model="newBug.qid" />
+                            <input type="text" class="form-control" placeholder="搜尋題號" x-model="bugSearch.qid" />
                         </div>
                         <div class="col-12 col-md">
-                            <input type="text" class="form-control" placeholder="問題描述" x-model="newBug.issue" />
+                            <input type="text" class="form-control" placeholder="搜尋描述" x-model="bugSearch.issue" />
                         </div>
                         <div class="col-6 col-md-2">
-                            <select class="form-select" x-model="newBug.status">
+                            <select class="form-select" x-model="bugSearch.status">
+                                <option value="">全部狀態</option>
                                 <template x-for="s in bugStatusOptions" :key="s">
                                     <option :value="s" x-text="s"></option>
                                 </template>
                             </select>
                         </div>
                         <div class="col-6 col-md-2 d-grid">
-                            <button class="btn btn-primary" @click="addBug()">新增</button>
+                            <button class="btn btn-outline-secondary" @click="clearBugSearch()">清除搜尋</button>
                         </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-primary" @click="openNewBugModal()"><i class="bi bi-plus"></i> 新增</button>
                     </div>
 
                     <div class="table-responsive mt-3">
@@ -666,15 +671,17 @@
                                 <tr>
                                     <th style="width:5rem;">題號</th>
                                     <th>描述</th>
+                                    <th>備註</th>
                                     <th style="width:8rem;">狀態</th>
-                                    <th style="width:4rem;">動作</th>
+                                    <th style="width:6rem;">動作</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="(b, idx) in bugs" :key="idx">
+                                <template x-for="(b, idx) in filteredBugs()" :key="idx">
                                     <tr>
                                         <td class="mono" x-text="b.qid || '-' "></td>
                                         <td x-text="b.issue || '-' "></td>
+                                        <td x-text="b.note || '-' "></td>
                                         <td>
                                             <select class="form-select form-select-sm" x-model="b.status" @change="saveBugsToLS()">
                                                 <template x-for="s in bugStatusOptions" :key="s">
@@ -683,12 +690,15 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-danger" @click="deleteBug(idx)"><i class="bi bi-trash3"></i></button>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button class="btn btn-outline-primary" @click="openEditBugModal(idx)"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-outline-danger" @click="deleteBug(idx)"><i class="bi bi-trash3"></i></button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </template>
-                                <tr x-show="bugs.length===0">
-                                    <td colspan="4" class="text-center text-secondary">尚無資料</td>
+                                <tr x-show="filteredBugs().length===0">
+                                    <td colspan="5" class="text-center text-secondary">尚無資料</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -697,6 +707,44 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Bug 新增/編輯 Modal -->
+    <div class="modal fade" id="bugModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" x-text="bugModalTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">題號</label>
+                        <input type="text" class="form-control" x-model="editBug.qid" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">問題描述</label>
+                        <input type="text" class="form-control" x-model="editBug.issue" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">狀態</label>
+                        <select class="form-select" x-model="editBug.status">
+                            <template x-for="s in bugStatusOptions" :key="s">
+                                <option :value="s" x-text="s"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">備註</label>
+                        <textarea class="form-control" x-model="editBug.note"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" @click="saveBug()">儲存</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div x-show="view==='quiz'" class="position-fixed" style="right:1rem; bottom:1rem; z-index:1000;">
@@ -764,9 +812,13 @@
                 filter: { onlyWrong: false, onlyNotEasy: false },
 
                 // Bug 回報資料
-                bugs: [],              // { qid, issue, status }
-                newBug: { qid: '', issue: '', status: '未處理' },
+                bugs: [],              // { qid, issue, status, note }
                 bugStatusOptions: ['未處理', '處理中', '已完成'],
+                editBug: { qid: '', issue: '', status: '未處理', note: '' },
+                editIndex: -1,
+                bugModal: null,
+                bugModalTitle: '',
+                bugSearch: { qid: '', issue: '', status: '' },
 
                 get statRows() {
                     let rows = Object.values(this.stats).map(s => ({ ...s }));
@@ -945,11 +997,29 @@
                     catch { this.bugs = []; }
                 },
                 saveBugsToLS() { localStorage.setItem('quizBugs', JSON.stringify(this.bugs)); },
-                addBug() {
-                    if (!this.newBug.qid && !this.newBug.issue) { alert('請填題號或問題'); return; }
-                    this.bugs.push({ qid: this.newBug.qid, issue: this.newBug.issue, status: this.newBug.status });
-                    this.newBug = { qid: '', issue: '', status: '未處理' };
+                openNewBugModal(qid = '') {
+                    this.editIndex = -1;
+                    this.editBug = { qid: qid || '', issue: '', status: this.bugStatusOptions[0], note: '' };
+                    this.bugModalTitle = '新增 Bug';
+                    this.showBugModal();
+                },
+                openEditBugModal(idx) {
+                    this.editIndex = idx;
+                    this.editBug = deepClone(this.bugs[idx]);
+                    this.bugModalTitle = '編輯 Bug';
+                    this.showBugModal();
+                },
+                showBugModal() {
+                    if (!this.bugModal) { this.bugModal = new bootstrap.Modal(document.getElementById('bugModal')); }
+                    this.bugModal.show();
+                },
+                saveBug() {
+                    if (!this.editBug.qid && !this.editBug.issue) { alert('請填題號或問題'); return; }
+                    const obj = deepClone(this.editBug);
+                    if (this.editIndex === -1) { this.bugs.push(obj); }
+                    else { this.bugs[this.editIndex] = obj; }
                     this.saveBugsToLS();
+                    this.bugModal.hide();
                 },
                 deleteBug(idx) { this.bugs.splice(idx, 1); this.saveBugsToLS(); },
                 clearAllBugs() { if (confirm('清空所有 bug 紀錄？')) { this.bugs = []; this.saveBugsToLS(); } },
@@ -968,14 +1038,26 @@
                     e.target.value = '';
                 },
                 openBug(qid) {
-                    this.newBug.qid = qid || '';
                     const panel = document.getElementById('bugPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
                         bs.show();
                         panel.scrollIntoView({ behavior: 'smooth' });
                     }
+                    this.openNewBugModal(qid);
                 },
+                filteredBugs() {
+                    return this.bugs.filter(b => {
+                        const q = this.bugSearch.qid.trim();
+                        const i = this.bugSearch.issue.trim();
+                        const s = this.bugSearch.status;
+                        const qMatch = !q || (b.qid || '').includes(q);
+                        const iMatch = !i || (b.issue || '').includes(i);
+                        const sMatch = !s || b.status === s;
+                        return qMatch && iMatch && sMatch;
+                    });
+                },
+                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '' }; },
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
