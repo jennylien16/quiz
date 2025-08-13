@@ -654,6 +654,7 @@
                                 <i class="bi bi-upload"></i> 匯入
                                 <input type="file" class="d-none" accept=".json,application/json" @change="importBugsFile($event)" />
                             </label>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 複製全部</button>
                             <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()"><i class="bi bi-clipboard"></i> 複製所有題號</button>
                             <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()"><i class="bi bi-trash3"></i> 清空全部</button>
                         </div>
@@ -756,10 +757,8 @@
                         <label class="form-label">備註</label>
                         <textarea class="form-control" x-model="editBug.note"></textarea>
                     </div>
-                    <div class="small text-secondary">開發者看不到回報，請使用下方「複製全部」自行傳給開發者。</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary me-auto" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 複製全部</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                     <button type="button" class="btn btn-primary" @click="saveBug()">儲存</button>
                 </div>
