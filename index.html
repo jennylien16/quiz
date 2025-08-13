@@ -247,11 +247,13 @@
                         <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 進度：<strong
                                 x-text="quizSet.length ? currentIndex + 1 : 0"></strong>/<span
                                 x-text="quizSet.length"></span> ｜ 時間：<strong x-text="timeText"></strong></div>
-        <div>
-            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
-                    class="bi bi-house"></i> 回首頁</button>
-        </div>
-    </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"><i class="bi bi-pause"></i> 暫停</button>
+                            <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"><i class="bi bi-play"></i> 繼續</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
+                                    class="bi bi-house"></i> 回首頁</button>
+                        </div>
+                    </div>
 
                     <template x-if="quizSet.length===0">
                         <div class="alert alert-warning mt-3">此模式下沒有可出題目（可能沒有錯題或全部被標記為簡單）。</div>
@@ -268,10 +270,10 @@
                                     <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end d-flex flex-column align-items-end">
-                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="$root.copyQuestion(q)">
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="Alpine.$data($root).copyQuestion(q)">
                                         <i class="bi bi-clipboard"></i> 複製
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="$root.openBug(q.id)">
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="Alpine.$data($root).openBug(q.id)">
                                         <i class="bi bi-bug"></i> Bug
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stat?.easy)?'badge-easy':''"
@@ -312,8 +314,8 @@
                                     <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（<span
                                             class="text-secondary">需答對才算</span>）</label>
                                 </div>
-                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex===0" @click="$root.prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
-                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex>=$root.quizSet.length-1" @click="$root.next()">下一題 <i class="bi bi-chevron-right"></i></button>
+                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex===0" @click="Alpine.$data($root).prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
+                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex>=$root.quizSet.length-1" @click="Alpine.$data($root).next()">下一題 <i class="bi bi-chevron-right"></i></button>
                                 <button class="btn btn-outline-secondary" @click="resetCurrent()"><i
                                         class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> 重新作答</button>
                             </div>
@@ -352,7 +354,9 @@
                     <div class="d-flex align-items-center justify-content-between sticky-header">
                         <div class="small-muted">模式：<span x-text="modeLabel"></span> ｜ 題數：<strong
                                 x-text="quizSet.length"></strong> ｜ 時間：<strong x-text="timeText"></strong></div>
-                        <div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"><i class="bi bi-pause"></i> 暫停</button>
+                            <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"><i class="bi bi-play"></i> 繼續</button>
                             <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
                                     class="bi bi-house"></i> 回首頁</button>
                         </div>
@@ -801,10 +805,11 @@
                 debugMode: false,
                 version: 'v1.0.1',
                 // 計時相關
-                perQuestionSec: 60,    // 每題秒數
-                timer: null,
-                timeLimitSec: 0,
-                remainingSec: 0,
+                  perQuestionSec: 120,    // 每題秒數（秒）
+                  timer: null,
+                  timeLimitSec: 0,
+                  remainingSec: 0,
+                  timerPaused: false,
                 get timeText() {
                     const m = Math.floor(this.remainingSec / 60).toString().padStart(2, '0');
                     const s = Math.floor(this.remainingSec % 60).toString().padStart(2, '0');
@@ -1119,14 +1124,15 @@
                     // 初始化已選答案容器
                     this.quizSet.forEach(q => { this.answers[q.id] = new Set(); this.easyMarkAll[q.id] = false; this.unsureMarkAll[q.id] = false; });
                     // 計時：依總題數計算總秒數
-                    const totalSec = Math.min(60 * 60, this.quizSet.length * this.perQuestionSec);
+                    const totalSec = Math.min(75 * 60, this.quizSet.length * this.perQuestionSec);
                     this.timeLimitSec = totalSec;
-                    this.startTimer();
+                    this.startTimer(true);
                 },
 
-                startTimer() {
-                    this.remainingSec = this.timeLimitSec;
+                startTimer(reset = false) {
+                    if (reset) this.remainingSec = this.timeLimitSec;
                     clearInterval(this.timer);
+                    this.timerPaused = false;
                     if (this.remainingSec <= 0) { this.finishAndSummary(); return; }
                     this.timer = setInterval(() => {
                         if (this.remainingSec > 0) {
@@ -1136,6 +1142,15 @@
                             this.finishAndSummary();
                         }
                     }, 1000);
+                },
+
+                pauseTimer() {
+                    clearInterval(this.timer);
+                    this.timerPaused = true;
+                },
+
+                resumeTimer() {
+                    this.startTimer();
                 },
 
                 // —— 一頁一題：導覽與收尾 ——
