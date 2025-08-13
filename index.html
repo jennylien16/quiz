@@ -654,13 +654,13 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <h2 class="h6 mb-0">Bug (假的)回報區</h2>
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()"><i class="bi bi-download"></i> 匯出</button>
-                            <label class="btn btn-sm btn-outline-primary mb-0">
+                            <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()" title="下載 bug_reports.json"><i class="bi bi-download"></i> 匯出</button>
+                            <label class="btn btn-sm btn-outline-primary mb-0" title="匯入 bug_reports.json">
                                 <i class="bi bi-upload"></i> 匯入
                                 <input type="file" class="d-none" accept=".json,application/json" @change="importBugsFile($event)" />
                             </label>
-                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 全部</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()"><i class="bi bi-clipboard"></i> 題號</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()" title="可以把問題一鍵複製傳給我哈哈"><i class="bi bi-clipboard"></i> 全部</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()" title="可以把有問題的題號一鍵複製傳給我哈哈"><i class="bi bi-clipboard"></i> 題號</button>
                             <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()" title="清空全部"><i class="bi bi-trash3"></i></button>
                         </div>
                     </div>
