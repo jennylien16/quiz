@@ -1100,10 +1100,13 @@
                     const panel = document.getElementById('recordPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
-                        panel.addEventListener('shown.bs.collapse', () => {
-                            panel.scrollIntoView({ behavior: 'smooth' });
-                        }, { once: true });
-                        bs.show();
+                        const willShow = !panel.classList.contains('show');
+                        if (willShow) {
+                            panel.addEventListener('shown.bs.collapse', () => {
+                                panel.scrollIntoView({ behavior: 'smooth' });
+                            }, { once: true });
+                        }
+                        bs.toggle();
                     }
                 },
                 openBugPanel() {
@@ -1111,10 +1114,13 @@
                     const panel = document.getElementById('bugPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
-                        panel.addEventListener('shown.bs.collapse', () => {
-                            panel.scrollIntoView({ behavior: 'smooth' });
-                        }, { once: true });
-                        bs.show();
+                        const willShow = !panel.classList.contains('show');
+                        if (willShow) {
+                            panel.addEventListener('shown.bs.collapse', () => {
+                                panel.scrollIntoView({ behavior: 'smooth' });
+                            }, { once: true });
+                        }
+                        bs.toggle();
                     }
                 },
                 openBug(qid) {
