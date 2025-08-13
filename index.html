@@ -1026,7 +1026,7 @@
                 clearAllBugs() { if (confirm('清空所有 bug 紀錄？')) { this.bugs = []; this.saveBugsToLS(); } },
                 copyAllBugs() { navigator.clipboard.writeText(JSON.stringify(this.bugs, null, 2)).then(() => alert('已複製所有 bug')); },
                 copyBugQids() {
-                    const ids = this.bugs.map(b => b.qid).filter(q => q);
+                    const ids = [...new Set(this.bugs.map(b => b.qid).filter(q => q))];
                     if (ids.length === 0) { alert('沒有題號可複製'); return; }
                     navigator.clipboard.writeText(ids.join(', ')).then(() => alert('已複製所有題號'));
                 },
@@ -1044,12 +1044,13 @@
                     e.target.value = '';
                 },
                 openBug(qid) {
+                    const currentY = window.scrollY;
                     const panel = document.getElementById('bugPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
                         bs.show();
-                        panel.scrollIntoView({ behavior: 'smooth' });
                     }
+                    window.scrollTo({ top: currentY });
                     this.openNewBugModal(qid);
                 },
                 filteredBugs() {
