@@ -100,6 +100,10 @@
                     aria-expanded="false">
                     <i class="bi bi-collection" aria-hidden="true"></i> 紀錄管理
                 </button>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="collapse" data-bs-target="#bugPanel"
+                    aria-expanded="false">
+                    <i class="bi bi-bug" aria-hidden="true"></i> Bug 回報
+                </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()">
                     <i class="bi bi-house" aria-hidden="true"></i> 回首頁
                 </button>
@@ -271,6 +275,9 @@
                                     <button class="btn btn-sm btn-outline-secondary mb-2" @click="$root.copyQuestion(q)">
                                         <i class="bi bi-clipboard"></i> 複製
                                     </button>
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="$root.openBug(q.id)">
+                                        <i class="bi bi-bug"></i> Bug
+                                    </button>
                                     <span class="badge rounded-pill mb-1" :class="(stat?.easy)?'badge-easy':''"
                                         x-text="(stat?.easy)?'已標簡單':''"></span>
                                     <div class="small-muted" x-show="(stat?.attempts||0)>0"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
@@ -381,6 +388,9 @@
                                 <div class="text-end d-flex flex-column align-items-end">
                                     <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)">
                                         <i class="bi bi-clipboard"></i> 複製
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="openBug(q.id)">
+                                        <i class="bi bi-bug"></i> Bug
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
                                     <div class="small-muted" x-show="(stats[q.id]?.attempts||0)>0"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
@@ -614,6 +624,79 @@
             </div>
         </div>
 
+        <!-- Bug 回報區 -->
+        <div id="bugPanel" class="collapse mt-4">
+            <div class="card card-soft">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h2 class="h6 mb-0">Bug 回報區</h2>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()"><i class="bi bi-download"></i> 匯出</button>
+                            <label class="btn btn-sm btn-outline-primary mb-0">
+                                <i class="bi bi-upload"></i> 匯入
+                                <input type="file" class="d-none" accept=".json,application/json" @change="importBugsFile($event)" />
+                            </label>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 複製全部</button>
+                            <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()"><i class="bi bi-trash3"></i> 清空全部</button>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mt-3">
+                        <div class="col-12 col-md-2">
+                            <input type="text" class="form-control" placeholder="題號" x-model="newBug.qid" />
+                        </div>
+                        <div class="col-12 col-md">
+                            <input type="text" class="form-control" placeholder="問題描述" x-model="newBug.issue" />
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <select class="form-select" x-model="newBug.status">
+                                <template x-for="s in bugStatusOptions" :key="s">
+                                    <option :value="s" x-text="s"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-2 d-grid">
+                            <button class="btn btn-primary" @click="addBug()">新增</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mt-3">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width:5rem;">題號</th>
+                                    <th>描述</th>
+                                    <th style="width:8rem;">狀態</th>
+                                    <th style="width:4rem;">動作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(b, idx) in bugs" :key="idx">
+                                    <tr>
+                                        <td class="mono" x-text="b.qid || '-' "></td>
+                                        <td x-text="b.issue || '-' "></td>
+                                        <td>
+                                            <select class="form-select form-select-sm" x-model="b.status" @change="saveBugsToLS()">
+                                                <template x-for="s in bugStatusOptions" :key="s">
+                                                    <option :value="s" x-text="s"></option>
+                                                </template>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteBug(idx)"><i class="bi bi-trash3"></i></button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="bugs.length===0">
+                                    <td colspan="4" class="text-center text-secondary">尚無資料</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div x-show="view==='quiz'" class="position-fixed" style="right:1rem; bottom:1rem; z-index:1000;">
@@ -680,6 +763,11 @@
                 stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, unsure, lastAnsweredAt }
                 filter: { onlyWrong: false, onlyNotEasy: false },
 
+                // Bug 回報資料
+                bugs: [],              // { qid, issue, status }
+                newBug: { qid: '', issue: '', status: '未處理' },
+                bugStatusOptions: ['未處理', '處理中', '已完成'],
+
                 get statRows() {
                     let rows = Object.values(this.stats).map(s => ({ ...s }));
                     if (this.filter.onlyWrong) rows = rows.filter(r => r.wrong > 0);
@@ -707,6 +795,8 @@
                     document.title = `純前端出題系統 ${this.version}｜Alpine.js`;
                     // 從 LocalStorage 載入紀錄
                     this.loadStatsFromLS();
+                    this.loadBugsFromLS();
+                    if (this.bugs.length === 0) { await this.loadBugsFromFile(); }
                     await this.loadProjectQuestions();
                     // 若 LocalStorage 沒有紀錄，才載入預設紀錄檔
                     if (Object.keys(this.stats).length === 0) {
@@ -740,6 +830,15 @@
                             }
                         }
                     } catch (err) { console.warn('載入紀錄檔失敗', err); }
+                },
+                async loadBugsFromFile() {
+                    try {
+                        const res = await fetch('bug_reports.json');
+                        if (res.ok) {
+                            const arr = await res.json();
+                            if (Array.isArray(arr)) { this.bugs = arr; this.saveBugsToLS(); }
+                        }
+                    } catch (err) { console.warn('載入 bug 檔失敗', err); }
                 },
 
                 // —— 題庫載入 ——
@@ -839,6 +938,44 @@
                 clearAllStats() { if (confirm('清空所有作答紀錄？')) { this.stats = {}; this.saveStatsToLS(); } },
                 toggleEasy(id) { if (!this.stats[id]) return; this.stats[id].easy = !this.stats[id].easy; this.saveStatsToLS(); },
                 clearOne(id) { if (!this.stats[id]) return; if (confirm(`清除此題（${id}）的紀錄？`)) { this.stats[id] = this.defaultStat(id); this.saveStatsToLS(); } },
+
+                // —— Bug 回報處理 ——
+                loadBugsFromLS() {
+                    try { this.bugs = JSON.parse(localStorage.getItem('quizBugs') || '[]') || []; }
+                    catch { this.bugs = []; }
+                },
+                saveBugsToLS() { localStorage.setItem('quizBugs', JSON.stringify(this.bugs)); },
+                addBug() {
+                    if (!this.newBug.qid && !this.newBug.issue) { alert('請填題號或問題'); return; }
+                    this.bugs.push({ qid: this.newBug.qid, issue: this.newBug.issue, status: this.newBug.status });
+                    this.newBug = { qid: '', issue: '', status: '未處理' };
+                    this.saveBugsToLS();
+                },
+                deleteBug(idx) { this.bugs.splice(idx, 1); this.saveBugsToLS(); },
+                clearAllBugs() { if (confirm('清空所有 bug 紀錄？')) { this.bugs = []; this.saveBugsToLS(); } },
+                copyAllBugs() { navigator.clipboard.writeText(JSON.stringify(this.bugs, null, 2)).then(() => alert('已複製所有 bug')); },
+                saveBugsFile() { downloadJSON(this.bugs, 'bug_reports.json'); },
+                async importBugsFile(e) {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    try {
+                        const text = await fileToText(file);
+                        const arr = JSON.parse(text);
+                        if (!Array.isArray(arr)) throw new Error('格式錯誤');
+                        this.bugs = arr;
+                        this.saveBugsToLS();
+                        alert('匯入完成！');
+                    } catch (err) { alert('匯入失敗：' + err.message); }
+                    e.target.value = '';
+                },
+                openBug(qid) {
+                    this.newBug.qid = qid || '';
+                    const panel = document.getElementById('bugPanel');
+                    if (panel) {
+                        const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
+                        bs.show();
+                        panel.scrollIntoView({ behavior: 'smooth' });
+                    }
+                },
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
