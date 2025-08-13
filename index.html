@@ -153,7 +153,9 @@
         <!-- 載入/設定 卡片 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
             <div class="card-body">
-                <div class="row g-3">
+                <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#qbankPanel" aria-expanded="false" aria-controls="qbankPanel">題庫與紀錄管理</button>
+                <div class="collapse" id="qbankPanel">
+                    <div class="row g-3">
                     <div class="col-12 col-lg-6">
                         <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
                         <input type="file" class="form-control" accept=".json,application/json"
@@ -187,11 +189,11 @@
                         </div>
                         <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div>
                     </div>
+                    </div>
+                    <hr class="my-4" />
                 </div>
 
-                <hr class="my-4" />
-
-                <div class="row g-3 align-items-end">
+                <div class="row g-3 align-items-end mt-3">
                     <div class="col-12 col-md-3">
                         <label class="form-label">出題數</label>
                         <div class="input-group">
