@@ -96,17 +96,17 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h1 class="h4 mb-0">出題系統 <span class="small text-secondary" x-text="version"></span> <span class="small text-secondary">｜Alpine.js</span></h1>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()">
-                    <i class="bi bi-collection" aria-hidden="true"></i> 紀錄管理
+                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
+                    <i class="bi bi-collection" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()">
-                    <i class="bi bi-bug" aria-hidden="true"></i> Bug 回報
+                <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()" title="Bug 回報">
+                    <i class="bi bi-bug" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()">
-                    <i class="bi bi-house" aria-hidden="true"></i> 回首頁
+                <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()" title="回首頁">
+                    <i class="bi bi-house" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp">
-                    <i class="bi bi-question-circle" aria-hidden="true"></i> 說明
+                <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp" title="說明">
+                    <i class="bi bi-question-circle" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -164,12 +164,12 @@
                         </div>
                         <div class="d-flex flex-wrap gap-2 mt-2">
                             <button class="btn btn-sm btn-outline-primary" @click="loadSample()"><i
-                                    class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例題庫</button>
+                                    class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例</button>
                             <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()"><i
-                                    class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案題庫</button>
+                                    class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案</button>
                             <button class="btn btn-sm btn-outline-secondary" :disabled="questions.length===0"
                                 @click="downloadQuestions()"><i class="bi bi-download" aria-hidden="true"></i>
-                                下載目前題庫</button>
+                                下載</button>
                         </div>
                     </div>
 
@@ -177,17 +177,17 @@
                         <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
                         <div class="d-flex flex-wrap gap-2">
                             <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
-                                @click="saveStatsFile()"><i class="bi bi-save2" aria-hidden="true"></i> 儲存紀錄檔</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入紀錄檔</button>
+                                @click="saveStatsFile()"><i class="bi bi-save2" aria-hidden="true"></i> 儲存</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入</button>
                             <label class="btn btn-sm btn-outline-primary mb-0">
-                                <i class="bi bi-upload" aria-hidden="true"></i> 匯入紀錄
+                                <i class="bi bi-upload" aria-hidden="true"></i> 匯入
                                 <input type="file" class="d-none" accept=".json,application/json"
                                     @change="importStatsFile($event)" />
                             </label>
                             <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()"><i
-                                    class="bi bi-trash3" aria-hidden="true"></i> 清空紀錄</button>
+                                    class="bi bi-trash3" aria-hidden="true"></i> 清空</button>
                         </div>
-                        <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div>
+                        <!-- <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div> -->
                     </div>
                     </div>
                     <hr class="my-4" />
@@ -259,8 +259,8 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"><i class="bi bi-pause"></i> 暫停</button>
                             <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"><i class="bi bi-play"></i> 繼續</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
-                                    class="bi bi-house"></i> 回首頁</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()" title="回到首頁"><i
+                                    class="bi bi-house"></i></button>
                         </div>
                     </div>
 
@@ -279,11 +279,11 @@
                                     <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end d-flex flex-column align-items-end">
-                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="Alpine.$data($root).copyQuestion(q)">
-                                        <i class="bi bi-clipboard"></i> 複製
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="Alpine.$data($root).copyQuestion(q)" title="複製">
+                                        <i class="bi bi-clipboard"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="Alpine.$data($root).openBug(q.id)">
-                                        <i class="bi bi-bug"></i> Bug
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="Alpine.$data($root).openBug(q.id)" title="Bug 回報">
+                                        <i class="bi bi-bug"></i>
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stat?.easy)?'badge-easy':''"
                                         x-text="(stat?.easy)?'已標簡單':''"></span>
@@ -371,8 +371,8 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"><i class="bi bi-pause"></i> 暫停</button>
                             <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"><i class="bi bi-play"></i> 繼續</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
-                                    class="bi bi-house"></i> 回首頁</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()" title="回到首頁"><i
+                                    class="bi bi-house"></i> </button>
                         </div>
                     </div>
 
@@ -397,11 +397,11 @@
                                     <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end d-flex flex-column align-items-end">
-                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)">
-                                        <i class="bi bi-clipboard"></i> 複製
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)" title="複製">
+                                        <i class="bi bi-clipboard"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="openBug(q.id)">
-                                        <i class="bi bi-bug"></i> Bug
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="openBug(q.id)" title="Bug 回報">
+                                        <i class="bi bi-bug"></i>
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
                                     <template x-if="(stats[q.id]?.wrong||0)+(stats[q.id]?.attempts||0)>0">
@@ -589,8 +589,8 @@
                                 <input class="form-check-input" type="checkbox" id="onlyNotEasy" x-model="filter.onlyNotEasy">
                                 <label class="form-check-label" for="onlyNotEasy">只看已標非簡單</label>
                             </div>
-                            <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
-                                    class="bi bi-download"></i> 匯出</button>
+                            <!-- <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
+                                    class="bi bi-download"></i> 匯出</button> -->
                             <button class="btn btn-sm btn-outline-primary" @click="showAllWithExp()"><i class="bi bi-journal-text"></i> 題庫+詳解</button>
                             <button class="btn btn-sm btn-outline-danger" @click="showWrongWithExp()"><i class="bi bi-x-circle"></i> 錯題+詳解</button>
                         </div>
@@ -657,9 +657,9 @@
                                 <i class="bi bi-upload"></i> 匯入
                                 <input type="file" class="d-none" accept=".json,application/json" @change="importBugsFile($event)" />
                             </label>
-                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 複製全部</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()"><i class="bi bi-clipboard"></i> 複製所有題號</button>
-                            <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()"><i class="bi bi-trash3"></i> 清空全部</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 全部</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()"><i class="bi bi-clipboard"></i> 題號</button>
+                            <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()" title="清空全部"><i class="bi bi-trash3"></i></button>
                         </div>
                     </div>
 
