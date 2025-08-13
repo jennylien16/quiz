@@ -499,6 +499,7 @@
                     <div class="d-flex flex-wrap gap-2 mt-3">
                           <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
                           回首頁</button>
+                        <button class="btn btn-outline-info" @click="viewAllResult()"><i class="bi bi-eye"></i> 看解析</button>
                         <button class="btn btn-outline-danger" x-show="summary.wrong>0" @click="reviewWrong()"><i class="bi bi-journal-text"></i> 查看本次錯題</button>
                         <button class="btn btn-primary" @click="startQuiz(mode)"><i class="bi bi-arrow-repeat"></i>
                             同模式再來一輪</button>
@@ -945,6 +946,12 @@
                     this.previewTitle = '本次錯題與詳解';
                     this.previewSet = arr;
                     this.view = 'preview';
+                },
+                viewAllResult() {
+                    this.pageMode = 'all';
+                    this.showScore = true;
+                    this.view = 'quiz';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
                 exitPreview() { this.view = this.prevView || 'home'; },
 
