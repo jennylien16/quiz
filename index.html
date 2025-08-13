@@ -198,6 +198,7 @@
                 <div class="row g-3 align-items-end mt-3">
                     <div class="col-12 col-md-3">
                         <label class="form-label">出題數</label>
+                        <span class="small text-secondary mt-1">（題庫目前：<strong x-text="questions.length"></strong> 題）</span>
                         <div class="input-group">
                             <input type="number" class="form-control" min="1" :max="questions.length||1"
                                 x-model.number="numQuestions" />
@@ -209,7 +210,6 @@
                                 <option value="100">100</option>
                             </select>
                         </div>
-                        <div class="small text-secondary mt-1">題庫目前：<strong x-text="questions.length"></strong> 題</div>
                     </div>
                     <div class="col-12 col-md-3">
                         <label class="form-label">版面</label>
@@ -652,7 +652,7 @@
             <div class="card card-soft">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <h2 class="h6 mb-0">Bug 回報區</h2>
+                        <h2 class="h6 mb-0">Bug (假的)回報區</h2>
                         <div class="d-flex flex-wrap gap-2">
                             <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()"><i class="bi bi-download"></i> 匯出</button>
                             <label class="btn btn-sm btn-outline-primary mb-0">
@@ -717,8 +717,8 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button class="btn btn-outline-primary" @click="openEditBugModal(idx)"><i class="bi bi-pencil"></i></button>
-                                                <button class="btn btn-outline-danger" @click="deleteBug(idx)"><i class="bi bi-trash3"></i></button>
+                                                <button class="btn btn-outline-primary" @click="openEditBugModal(idx)" title="修改"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-outline-danger" @click="deleteBug(idx)" title="刪除"><i class="bi bi-trash3"></i></button>
                                             </div>
                                         </td>
                                     </tr>
