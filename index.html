@@ -455,6 +455,7 @@
                                 批改全部</button>
                             <button class="btn btn-success" @click="finishAndSummary()"
                                 :disabled="Object.keys(resultMap).length===0"><i class="bi bi-flag"></i> 結束並看成績</button>
+                            <button class="btn btn-outline-secondary" x-show="showScore" @click="returnToSummary()"><i class="bi bi-card-list"></i> 回本次成績</button>
                         </div>
                     </div>
                 </div>
@@ -799,7 +800,7 @@
                 // 狀態
                 view: 'home',            // home | quiz | summary | preview
                 prevView: 'home',
-                pageMode: 'all',         // one | all
+                pageMode: localStorage.getItem('pageMode') || 'all',         // one | all
                 mode: 'normal',          // normal | review | wrongOnly
                 get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題' }[this.mode] },
                 questions: [],
@@ -868,6 +869,7 @@
 
                 async init() {
                     document.title = `出題系統 ${this.version}｜Alpine.js`;
+                    this.$watch('pageMode', v => localStorage.setItem('pageMode', v));
                     // 從 LocalStorage 載入紀錄
                     this.loadStatsFromLS();
                     this.loadBugsFromLS();
@@ -985,6 +987,11 @@
                     this.pageMode = 'all';
                     this.showScore = true;
                     this.view = 'quiz';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                returnToSummary() {
+                    this.showScore = false;
+                    this.view = 'summary';
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
                 exitPreview() { this.view = this.prevView || 'home'; },
