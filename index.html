@@ -132,15 +132,30 @@
         <!-- 統計摘要 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
             <div class="card-body">
-                <h2 class="h6">未作答｜未標簡單</h2>
+                <h2 class="h6">題庫統計摘要</h2>
                 <div class="row text-center mt-2 justify-content-center g-3">
                     <div class="col-6 col-md-3">
-                        <div class="small-muted">未作答</div>
-                        <div class="h5 text-warning" x-text="overallStats.unanswered"></div>
+                        <div class="small-muted">總題數</div>
+                        <div class="h5" x-text="overallStats.total"></div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="small-muted">未標簡單</div>
-                        <div class="h5 text-info" x-text="overallStats.notEasy"></div>
+                        <div class="small-muted">未作答｜未標簡單</div>
+                        <div class="h5">
+                            <span class="text-warning" x-text="overallStats.unanswered"></span>
+                            <span class="mx-1">｜</span>
+                            <span class="text-info" x-text="overallStats.notEasy"></span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="small-muted">答錯/作答</div>
+                        <div class="h5">
+                            <span class="text-danger" x-text="overallStats.wrong"></span>/
+                            <span x-text="overallStats.totalAttempts"></span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="small-muted">正確率</div>
+                        <div class="h5 text-success" x-text="overallStats.accuracy + '%' "></div>
                     </div>
                 </div>
             </div>
