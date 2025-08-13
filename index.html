@@ -265,6 +265,9 @@
                                 @click="startQuiz('wrongOnly')"><i class="bi bi-exclamation-octagon"
                                     aria-hidden="true"></i>
                                 只出錯題</button>
+                            <button class="btn btn-outline-warning" :disabled="questions.length===0"
+                                @click="startQuiz('unansweredOnly')"><i class="bi bi-patch-question"
+                                    aria-hidden="true"></i> 只出未作答題</button>
                         </div>
                     </div>
                 </div>
@@ -900,8 +903,8 @@
                 view: 'home',            // home | quiz | summary | preview
                 prevView: 'home',
                 pageMode: localStorage.getItem('pageMode') || 'all',         // one | all
-                mode: 'normal',          // normal | review | wrongOnly
-                get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題' }[this.mode] },
+                mode: 'normal',          // normal | review | wrongOnly | unansweredOnly
+                get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題', unansweredOnly: '只出未作答題' }[this.mode] },
                 questions: [],
                 quizSet: [],
                 currentIndex: 0,
@@ -1351,6 +1354,10 @@
 
                     if (mode === 'wrongOnly') {
                         pool = pool.filter(q => (this.stats[q.id]?.wrong || 0) > 0);
+                    }
+
+                    if (mode === 'unansweredOnly') {
+                        pool = pool.filter(q => (this.stats[q.id]?.attempts || 0) === 0);
                     }
 
                     // 未作答優先，其次依錯誤率排序
