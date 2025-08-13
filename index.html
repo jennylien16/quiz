@@ -325,8 +325,6 @@
                                     <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（<span
                                             class="text-secondary">需答對才算</span>）</label>
                                 </div>
-                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex===0" @click="Alpine.$data($root).prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
-                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex>=$root.quizSet.length-1" @click="Alpine.$data($root).next()">下一題 <i class="bi bi-chevron-right"></i></button>
                                 <button class="btn btn-outline-secondary" @click="resetCurrent()"><i
                                         class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> 重新作答</button>
                             </div>
