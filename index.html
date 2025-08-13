@@ -96,17 +96,20 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h1 class="h4 mb-0">出題系統 <span class="small text-secondary" x-text="version"></span> <span class="small text-secondary">｜Alpine.js</span></h1>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()">
-                    <i class="bi bi-collection" aria-hidden="true"></i> 紀錄管理
+                <button class="btn btn-outline-secondary btn-sm" @click="openQbankPanel()" title="題庫管理">
+                    <i class="bi bi-journal-text" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()">
-                    <i class="bi bi-bug" aria-hidden="true"></i> Bug 回報
+                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
+                    <i class="bi bi-collection" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()">
-                    <i class="bi bi-house" aria-hidden="true"></i> 回首頁
+                <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()" title="Bug 回報">
+                    <i class="bi bi-bug" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp">
-                    <i class="bi bi-question-circle" aria-hidden="true"></i> 說明
+                <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()" title="回首頁">
+                    <i class="bi bi-house" aria-hidden="true"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp" title="說明">
+                    <i class="bi bi-question-circle" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -150,52 +153,79 @@
             </div>
         </div>
 
-        <!-- 載入/設定 卡片 -->
-        <div class="card card-soft mb-4" x-show="view==='home'">
-            <div class="card-body">
-                <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#qbankPanel" aria-expanded="false" aria-controls="qbankPanel">題庫與紀錄管理</button>
-                <div class="collapse" id="qbankPanel">
-                    <div class="row g-3">
-                    <div class="col-12 col-lg-6">
-                        <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
-                        <input type="file" class="form-control" accept=".json,application/json"
-                            @change="loadQuestionsFromFile($event)" />
-                        <div class="small text-secondary mt-2" x-show="questions.length===0">尚未載入題庫，可先載入下方「範例題庫」試用。
-                        </div>
-                        <div class="d-flex flex-wrap gap-2 mt-2">
-                            <button class="btn btn-sm btn-outline-primary" @click="loadSample()"><i
-                                    class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例題庫</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()"><i
-                                    class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案題庫</button>
-                            <button class="btn btn-sm btn-outline-secondary" :disabled="questions.length===0"
-                                @click="downloadQuestions()"><i class="bi bi-download" aria-hidden="true"></i>
-                                下載目前題庫</button>
-                        </div>
-                    </div>
+<!-- 載入/設定 卡片 -->
+<div class="card card-soft mb-4" x-show="view==='home'">
+  <div class="card-body">
+    <!-- 開關折疊的按鈕 -->
+    <button
+      class="btn btn-outline-secondary mb-3"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#qbankPanel"
+      aria-expanded="false"
+      aria-controls="qbankPanel">
+      題庫與紀錄管理
+    </button>
 
-                    <div class="col-12 col-lg-6">
-                        <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
-                                @click="saveStatsFile()"><i class="bi bi-save2" aria-hidden="true"></i> 儲存紀錄檔</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入紀錄檔</button>
-                            <label class="btn btn-sm btn-outline-primary mb-0">
-                                <i class="bi bi-upload" aria-hidden="true"></i> 匯入紀錄
-                                <input type="file" class="d-none" accept=".json,application/json"
-                                    @change="importStatsFile($event)" />
-                            </label>
-                            <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()"><i
-                                    class="bi bi-trash3" aria-hidden="true"></i> 清空紀錄</button>
-                        </div>
-                        <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div>
-                    </div>
-                    </div>
+    <!-- 可折疊的內容 -->
+    <div class="collapse" id="qbankPanel">
+      <div class="row g-3">
+        <div class="col-12 col-lg-6">
+          <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
+          <input type="file" class="form-control" accept=".json,application/json"
+                 @change="loadQuestionsFromFile($event)" />
+          <div class="small text-secondary mt-2" x-show="questions.length===0">
+            尚未載入題庫，可先載入下方「範例題庫」試用。
+          </div>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
+              <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()">
+              <i class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" :disabled="questions.length===0"
+                    @click="downloadQuestions()">
+              <i class="bi bi-download" aria-hidden="true"></i> 下載
+            </button>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
+          <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
+                    @click="saveStatsFile()">
+              <i class="bi bi-save2" aria-hidden="true"></i> 儲存
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()">
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入
+            </button>
+            <label class="btn btn-sm btn-outline-primary mb-0">
+              <i class="bi bi-upload" aria-hidden="true"></i> 匯入
+              <input type="file" class="d-none" accept=".json,application/json"
+                     @change="importStatsFile($event)" />
+            </label>
+            <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()">
+              <i class="bi bi-trash3" aria-hidden="true"></i> 清空
+            </button>
+          </div>
+          <!-- <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div> -->
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-4" />
+  </div>
+</div>
+
                     <hr class="my-4" />
                 </div>
 
                 <div class="row g-3 align-items-end mt-3">
                     <div class="col-12 col-md-3">
                         <label class="form-label">出題數</label>
+                        <span class="small text-secondary mt-1">（題庫目前：<strong x-text="questions.length"></strong> 題）</span>
                         <div class="input-group">
                             <input type="number" class="form-control" min="1" :max="questions.length||1"
                                 x-model.number="numQuestions" />
@@ -207,7 +237,6 @@
                                 <option value="100">100</option>
                             </select>
                         </div>
-                        <div class="small text-secondary mt-1">題庫目前：<strong x-text="questions.length"></strong> 題</div>
                     </div>
                     <div class="col-12 col-md-3">
                         <label class="form-label">版面</label>
@@ -259,8 +288,8 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"><i class="bi bi-pause"></i> 暫停</button>
                             <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"><i class="bi bi-play"></i> 繼續</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
-                                    class="bi bi-house"></i> 回首頁</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()" title="回到首頁"><i
+                                    class="bi bi-house"></i></button>
                         </div>
                     </div>
 
@@ -279,11 +308,11 @@
                                     <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end d-flex flex-column align-items-end">
-                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="Alpine.$data($root).copyQuestion(q)">
-                                        <i class="bi bi-clipboard"></i> 複製
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="Alpine.$data($root).copyQuestion(q)" title="複製">
+                                        <i class="bi bi-clipboard"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="Alpine.$data($root).openBug(q.id)">
-                                        <i class="bi bi-bug"></i> Bug
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="Alpine.$data($root).openBug(q.id)" title="Bug 回報">
+                                        <i class="bi bi-bug"></i>
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stat?.easy)?'badge-easy':''"
                                         x-text="(stat?.easy)?'已標簡單':''"></span>
@@ -323,8 +352,6 @@
                                     <label class="form-check-label" :for="'easy_'+q.id">這題很簡單不用再出（<span
                                             class="text-secondary">需答對才算</span>）</label>
                                 </div>
-                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex===0" @click="Alpine.$data($root).prev()"><i class="bi bi-chevron-left"></i> 上一題</button>
-                                <button class="btn btn-outline-secondary" :disabled="$root.currentIndex>=$root.quizSet.length-1" @click="Alpine.$data($root).next()">下一題 <i class="bi bi-chevron-right"></i></button>
                                 <button class="btn btn-outline-secondary" @click="resetCurrent()"><i
                                         class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> 重新作答</button>
                             </div>
@@ -371,8 +398,8 @@
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"><i class="bi bi-pause"></i> 暫停</button>
                             <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"><i class="bi bi-play"></i> 繼續</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()"><i
-                                    class="bi bi-house"></i> 回首頁</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()" title="回到首頁"><i
+                                    class="bi bi-house"></i> </button>
                         </div>
                     </div>
 
@@ -397,11 +424,11 @@
                                     <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
                                 <div class="text-end d-flex flex-column align-items-end">
-                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)">
-                                        <i class="bi bi-clipboard"></i> 複製
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)" title="複製">
+                                        <i class="bi bi-clipboard"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="openBug(q.id)">
-                                        <i class="bi bi-bug"></i> Bug
+                                    <button class="btn btn-sm btn-outline-danger mb-2" @click="openBug(q.id)" title="Bug 回報">
+                                        <i class="bi bi-bug"></i>
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
                                     <template x-if="(stats[q.id]?.wrong||0)+(stats[q.id]?.attempts||0)>0">
@@ -455,6 +482,7 @@
                                 批改全部</button>
                             <button class="btn btn-success" @click="finishAndSummary()"
                                 :disabled="Object.keys(resultMap).length===0"><i class="bi bi-flag"></i> 結束並看成績</button>
+                            <button class="btn btn-outline-secondary" x-show="showScore" @click="returnToSummary()"><i class="bi bi-card-list"></i> 回本次成績</button>
                         </div>
                     </div>
                 </div>
@@ -588,13 +616,14 @@
                                 <input class="form-check-input" type="checkbox" id="onlyNotEasy" x-model="filter.onlyNotEasy">
                                 <label class="form-check-label" for="onlyNotEasy">只看已標非簡單</label>
                             </div>
-                            <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
-                                    class="bi bi-download"></i> 匯出</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="refreshStatsIds()"><i class="bi bi-arrow-clockwise"></i> 更新題號</button>
+                            <!-- <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
+                                    class="bi bi-download"></i> 匯出</button> -->
                             <button class="btn btn-sm btn-outline-primary" @click="showAllWithExp()"><i class="bi bi-journal-text"></i> 題庫+詳解</button>
                             <button class="btn btn-sm btn-outline-danger" @click="showWrongWithExp()"><i class="bi bi-x-circle"></i> 錯題+詳解</button>
                         </div>
                     </div>
-                    <div class="table-responsive mt-3">
+                    <div class="table-responsive mt-3" style="max-height: 60vh; overflow-y: auto;">
                         <table class="table align-middle">
                             <thead>
                                 <tr>
@@ -649,16 +678,16 @@
             <div class="card card-soft">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <h2 class="h6 mb-0">Bug 回報區</h2>
+                        <h2 class="h6 mb-0">Bug (假的)回報區</h2>
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()"><i class="bi bi-download"></i> 匯出</button>
-                            <label class="btn btn-sm btn-outline-primary mb-0">
+                            <button class="btn btn-sm btn-outline-secondary" @click="saveBugsFile()" title="下載 bug_reports.json"><i class="bi bi-download"></i> 匯出</button>
+                            <label class="btn btn-sm btn-outline-primary mb-0" title="匯入 bug_reports.json">
                                 <i class="bi bi-upload"></i> 匯入
                                 <input type="file" class="d-none" accept=".json,application/json" @change="importBugsFile($event)" />
                             </label>
-                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()"><i class="bi bi-clipboard"></i> 複製全部</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()"><i class="bi bi-clipboard"></i> 複製所有題號</button>
-                            <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()"><i class="bi bi-trash3"></i> 清空全部</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyAllBugs()" title="可以把問題一鍵複製傳給我哈哈"><i class="bi bi-clipboard"></i> 全部</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="copyBugQids()" title="可以把有問題的題號一鍵複製傳給我哈哈"><i class="bi bi-clipboard"></i> 題號</button>
+                            <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()" title="清空全部"><i class="bi bi-trash3"></i></button>
                         </div>
                     </div>
 
@@ -692,16 +721,18 @@
                                 <tr>
                                     <th style="width:5rem;">題號</th>
                                     <th>描述</th>
+                                    <th style="width:10rem;">時間</th>
                                     <th>備註</th>
                                     <th style="width:8rem;">狀態</th>
                                     <th style="width:6rem;">動作</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="(b, idx) in filteredBugs()" :key="idx">
+                                <template x-for="b in filteredBugs()" :key="b.qid || b.time">
                                     <tr>
                                         <td class="mono" x-text="b.qid || '-' "></td>
                                         <td x-text="b.issue || '-' "></td>
+                                        <td x-text="b.time ? new Date(b.time).toLocaleDateString() : '-' "></td>
                                         <td x-text="b.note || '-' "></td>
                                         <td>
                                             <select class="form-select form-select-sm" x-model="b.status" @change="saveBugsToLS()">
@@ -712,14 +743,14 @@
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <button class="btn btn-outline-primary" @click="openEditBugModal(idx)"><i class="bi bi-pencil"></i></button>
-                                                <button class="btn btn-outline-danger" @click="deleteBug(idx)"><i class="bi bi-trash3"></i></button>
+                                                <button class="btn btn-outline-primary" @click="openEditBugModal(b)" title="修改"><i class="bi bi-pencil"></i></button>
+                                                <button class="btn btn-outline-danger" @click="deleteBug(b)" title="刪除"><i class="bi bi-trash3"></i></button>
                                             </div>
                                         </td>
                                     </tr>
                                 </template>
                                 <tr x-show="filteredBugs().length===0">
-                                    <td colspan="5" class="text-center text-secondary">尚無資料</td>
+                                    <td colspan="6" class="text-center text-secondary">尚無資料</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -754,6 +785,10 @@
                                 <option :value="s" x-text="s"></option>
                             </template>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">時間</label>
+                        <input type="datetime-local" class="form-control" x-model="editBug.time" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">備註</label>
@@ -793,13 +828,19 @@
             return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
         };
 
+        const BUG_STATUS = Object.freeze({
+            UNRESOLVED: '未處理',
+            IN_PROGRESS: '處理中',
+            DONE: '已完成'
+        });
+
         // —— Alpine Root ——
         function quizApp() {
             return {
                 // 狀態
                 view: 'home',            // home | quiz | summary | preview
                 prevView: 'home',
-                pageMode: 'all',         // one | all
+                pageMode: localStorage.getItem('pageMode') || 'all',         // one | all
                 mode: 'normal',          // normal | review | wrongOnly
                 get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題' }[this.mode] },
                 questions: [],
@@ -835,13 +876,13 @@
                 filter: { onlyWrong: true, onlyNotEasy: false },
 
                 // Bug 回報資料
-                bugs: [],              // { qid, issue, status, note }
-                bugStatusOptions: ['未處理', '處理中', '已完成'],
-                editBug: { qid: '', issue: '', status: '未處理', note: '' },
+                bugs: [],              // { qid, issue, status, note, time }
+                bugStatusOptions: Object.values(BUG_STATUS),
+                editBug: { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED, note: '', time: '' },
                 editIndex: -1,
                 bugModal: null,
                 bugModalTitle: '',
-                bugSearch: { qid: '', issue: '', status: '未處理' },
+                bugSearch: { qid: '', issue: '', status: '' },
 
                 get statRows() {
                     let rows = Object.values(this.stats).map(s => ({ ...s }));
@@ -868,6 +909,7 @@
 
                 async init() {
                     document.title = `出題系統 ${this.version}｜Alpine.js`;
+                    this.$watch('pageMode', v => localStorage.setItem('pageMode', v));
                     // 從 LocalStorage 載入紀錄
                     this.loadStatsFromLS();
                     this.loadBugsFromLS();
@@ -914,7 +956,7 @@
                         const res = await fetch('bug_reports.json');
                         if (res.ok) {
                             const arr = await res.json();
-                            if (Array.isArray(arr)) { this.bugs = arr; this.saveBugsToLS(); }
+                            if (Array.isArray(arr)) { this.bugs = arr.map(b => this.normalizeBug(b)); this.saveBugsToLS(); }
                         }
                     } catch (err) { console.warn('載入 bug 檔失敗', err); }
                 },
@@ -987,6 +1029,11 @@
                     this.view = 'quiz';
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
+                returnToSummary() {
+                    this.showScore = false;
+                    this.view = 'summary';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
                 exitPreview() { this.view = this.prevView || 'home'; },
 
                 // —— 紀錄（第二個 JSON）處理 ——
@@ -1037,24 +1084,44 @@
                     e.target.value = '';
                 },
                 clearAllStats() { if (confirm('清空所有作答紀錄？')) { this.stats = {}; this.saveStatsToLS(); } },
+                refreshStatsIds() {
+                    const valid = new Set(this.questions.map(q => q.id));
+                    for (const id of Object.keys(this.stats)) {
+                        if (valid.has(id)) {
+                            this.stats[id].id = id;
+                        } else {
+                            delete this.stats[id];
+                        }
+                    }
+                    this.saveStatsToLS();
+                },
                 toggleEasy(id) { if (!this.stats[id]) return; this.stats[id].easy = !this.stats[id].easy; this.saveStatsToLS(); },
                 clearOne(id) { if (!this.stats[id]) return; if (confirm(`清除此題（${id}）的紀錄？`)) { this.stats[id] = this.defaultStat(id); this.saveStatsToLS(); } },
 
                 // —— Bug 回報處理 ——
                 loadBugsFromLS() {
-                    try { this.bugs = JSON.parse(localStorage.getItem('quizBugs') || '[]') || []; }
+                    try { this.bugs = (JSON.parse(localStorage.getItem('quizBugs') || '[]') || []).map(b => this.normalizeBug(b)); }
                     catch { this.bugs = []; }
                 },
                 saveBugsToLS() { localStorage.setItem('quizBugs', JSON.stringify(this.bugs)); },
                 openNewBugModal(qid = '') {
                     this.editIndex = -1;
-                    this.editBug = { qid: qid || '', issue: '', status: this.bugStatusOptions[0], note: '' };
+                    this.editBug = {
+                        qid: qid || '',
+                        issue: '',
+                        status: BUG_STATUS.UNRESOLVED,
+                        note: '',
+                        time: new Date().toISOString().slice(0,16)
+                    };
                     this.bugModalTitle = '新增 Bug';
                     this.showBugModal();
                 },
-                openEditBugModal(idx) {
+                openEditBugModal(bug) {
+                    const idx = this.bugs.indexOf(bug);
+                    if (idx === -1) return;
                     this.editIndex = idx;
-                    this.editBug = deepClone(this.bugs[idx]);
+                    this.editBug = deepClone(bug);
+                    this.editBug.time = this.editBug.time ? new Date(this.editBug.time).toISOString().slice(0,16) : new Date().toISOString().slice(0,16);
                     this.bugModalTitle = '編輯 Bug';
                     this.showBugModal();
                 },
@@ -1069,13 +1136,18 @@
                         return;
                     }
                     const obj = deepClone(this.editBug);
+                    obj.status = this.normalizeStatus(obj.status);
+                    obj.time = obj.time ? new Date(obj.time).toISOString() : new Date().toISOString();
                     if (this.editIndex === -1) { this.bugs.push(obj); }
                     else { this.bugs[this.editIndex] = obj; }
                     this.saveBugsToLS();
                     this.syncBugsWithQuestions();
                     this.bugModal.hide();
                 },
-                deleteBug(idx) { this.bugs.splice(idx, 1); this.saveBugsToLS(); },
+                deleteBug(bug) {
+                    const idx = this.bugs.indexOf(bug);
+                    if (idx !== -1) { this.bugs.splice(idx, 1); this.saveBugsToLS(); }
+                },
                 clearAllBugs() { if (confirm('清空所有 bug 紀錄？')) { this.bugs = []; this.saveBugsToLS(); } },
                 copyAllBugs() { navigator.clipboard.writeText(JSON.stringify(this.bugs, null, 2)).then(() => alert('已複製所有 bug')); },
                 copyBugQids() {
@@ -1090,12 +1162,25 @@
                         const text = await fileToText(file);
                         const arr = JSON.parse(text);
                         if (!Array.isArray(arr)) throw new Error('格式錯誤');
-                        this.bugs = arr;
+                        this.bugs = arr.map(b => this.normalizeBug(b));
                         this.syncBugsWithQuestions();
                         this.saveBugsToLS();
                         alert('匯入完成！');
                     } catch (err) { alert('匯入失敗：' + err.message); }
                     e.target.value = '';
+                },
+                openQbankPanel() {
+                    const panel = document.getElementById('qbankPanel');
+                    if (panel) {
+                        const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
+                        const willShow = !panel.classList.contains('show');
+                        if (willShow) {
+                            panel.addEventListener('shown.bs.collapse', () => {
+                                panel.scrollIntoView({ behavior: 'smooth' });
+                            }, { once: true });
+                        }
+                        bs.toggle();
+                    }
                 },
                 openRecordPanel() {
                     this.filter.onlyWrong = true;
@@ -1112,7 +1197,7 @@
                     }
                 },
                 openBugPanel() {
-                    this.bugSearch = { qid: '', issue: '', status: '未處理' };
+                    this.bugSearch = { qid: '', issue: '', status: '' };
                     const panel = document.getElementById('bugPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
@@ -1146,7 +1231,22 @@
                         return qMatch && iMatch && sMatch;
                     });
                 },
-                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '未處理' }; },
+                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '' }; },
+
+                normalizeStatus(s) {
+                    if (s === '已處理') return BUG_STATUS.DONE;
+                    return Object.values(BUG_STATUS).includes(s) ? s : BUG_STATUS.UNRESOLVED;
+                },
+
+                normalizeBug(b) {
+                    return {
+                        qid: b.qid || '',
+                        issue: b.issue || '',
+                        status: this.normalizeStatus(b.status),
+                        note: b.note || '',
+                        time: b.time ? new Date(b.time).toISOString() : new Date().toISOString()
+                    };
+                },
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
