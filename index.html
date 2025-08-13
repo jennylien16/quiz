@@ -132,26 +132,13 @@
         <!-- 統計摘要 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
             <div class="card-body">
-                <h2 class="h6">題庫統計摘要</h2>
+                <h2 class="h6">未作答｜未標簡單</h2>
                 <div class="row text-center mt-2 justify-content-center g-3">
-                    <div class="col-6 col-md-2">
-                        <div class="small-muted">總題數</div>
-                        <div class="h5" x-text="overallStats.total"></div>
-                    </div>
-                    <div class="col-6 col-md-2">
+                    <div class="col-6 col-md-3">
                         <div class="small-muted">未作答</div>
                         <div class="h5 text-warning" x-text="overallStats.unanswered"></div>
                     </div>
-                    <div class="col-6 col-md-2">
-                        <div class="small-muted">答錯/作答</div>
-                        <div class="h5 text-danger"><span x-text="overallStats.wrong"></span>/<span
-                                x-text="overallStats.totalAttempts"></span></div>
-                    </div>
-                    <div class="col-6 col-md-2">
-                        <div class="small-muted">正確率</div>
-                        <div class="h5 text-success" x-text="overallStats.accuracy + '%' "></div>
-                    </div>
-                    <div class="col-6 col-md-2">
+                    <div class="col-6 col-md-3">
                         <div class="small-muted">未標簡單</div>
                         <div class="h5 text-info" x-text="overallStats.notEasy"></div>
                     </div>
@@ -1546,6 +1533,7 @@
                         const picked = Array.from(this.answers[q.id] || []);
                         if (picked.length === 0) { this.resultMap[q.id] = 'unanswered'; continue; }
                         const ok = this.isCorrectAnswer(q.answer, picked);
+                        if (this.resultMap[q.id]) continue;
                         this.applyResult(q.id, ok, picked, this.easyMarkAll[q.id], this.unsureMarkAll[q.id]);
                         this.resultMap[q.id] = ok ? 'correct' : 'wrong';
                     }
@@ -1670,6 +1658,7 @@
                     // 監聽「這題我不確定」變化並寫入紀錄
                     this.$watch('markUnsure', v => {
                         if (!this.q) return;
+                        this.root.unsureMarkAll[this.q.id] = v;
                         if (!this.root.stats[this.q.id]) {
                             this.root.stats[this.q.id] = this.root.defaultStat(this.q.id);
                         }
@@ -1679,6 +1668,7 @@
                     // 監聽「這題很簡單」變化並寫入紀錄（需已答對才算）
                     this.$watch('markEasy', v => {
                         if (!this.q) return;
+                        this.root.easyMarkAll[this.q.id] = v;
                         if (!this.root.stats[this.q.id]) {
                             this.root.stats[this.q.id] = this.root.defaultStat(this.q.id);
                         }
@@ -1705,8 +1695,10 @@
                     this.hasResult = false;
                     this.isCorrect = false;
                     this.expOpen = false;
-                    this.markEasy = !!this.stat.easy;
-                    this.markUnsure = !!this.stat.unsure;
+                    this.markEasy = (root.easyMarkAll[q.id] !== undefined) ? root.easyMarkAll[q.id] : !!this.stat.easy;
+                    this.markUnsure = (root.unsureMarkAll[q.id] !== undefined) ? root.unsureMarkAll[q.id] : !!this.stat.unsure;
+                    root.easyMarkAll[q.id] = this.markEasy;
+                    root.unsureMarkAll[q.id] = this.markUnsure;
                 },
                 optionClass(id) {
                     if (!this.hasResult) return '';
@@ -1730,6 +1722,8 @@
                     this.markEasy = false;
                     this.markUnsure = false;
                     this.root.answers[this.q.id] = new Set();
+                    this.root.easyMarkAll[this.q.id] = false;
+                    this.root.unsureMarkAll[this.q.id] = false;
                 },
                 submitOne() {
                     const picked = Array.from(this.selected);
