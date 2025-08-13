@@ -96,6 +96,9 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h1 class="h4 mb-0">出題系統 <span class="small text-secondary" x-text="version"></span> <span class="small text-secondary">｜Alpine.js</span></h1>
             <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" @click="openQbankPanel()" title="題庫管理">
+                    <i class="bi bi-journal-text" aria-hidden="true"></i>
+                </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
                     <i class="bi bi-collection" aria-hidden="true"></i>
                 </button>
@@ -153,7 +156,6 @@
         <!-- 載入/設定 卡片 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
             <div class="card-body">
-                <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#qbankPanel" aria-expanded="false" aria-controls="qbankPanel">題庫與紀錄管理</button>
                 <div class="collapse" id="qbankPanel">
                     <div class="row g-3">
                     <div class="col-12 col-lg-6">
@@ -693,6 +695,7 @@
                                 <tr>
                                     <th style="width:5rem;">題號</th>
                                     <th>描述</th>
+                                    <th style="width:10rem;">時間</th>
                                     <th>備註</th>
                                     <th style="width:8rem;">狀態</th>
                                     <th style="width:6rem;">動作</th>
@@ -703,6 +706,7 @@
                                     <tr>
                                         <td class="mono" x-text="b.qid || '-' "></td>
                                         <td x-text="b.issue || '-' "></td>
+                                        <td x-text="b.time ? new Date(b.time).toLocaleString() : '-' "></td>
                                         <td x-text="b.note || '-' "></td>
                                         <td>
                                             <select class="form-select form-select-sm" x-model="b.status" @change="saveBugsToLS()">
@@ -720,7 +724,7 @@
                                     </tr>
                                 </template>
                                 <tr x-show="filteredBugs().length===0">
-                                    <td colspan="5" class="text-center text-secondary">尚無資料</td>
+                                    <td colspan="6" class="text-center text-secondary">尚無資料</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -755,6 +759,10 @@
                                 <option :value="s" x-text="s"></option>
                             </template>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">時間</label>
+                        <input type="datetime-local" class="form-control" x-model="editBug.time" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">備註</label>
@@ -793,6 +801,12 @@
             const pad = (n) => String(n).padStart(2, '0');
             return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
         };
+
+        const BUG_STATUS = Object.freeze({
+            UNRESOLVED: '未處理',
+            IN_PROGRESS: '處理中',
+            DONE: '已完成'
+        });
 
         // —— Alpine Root ——
         function quizApp() {
@@ -836,13 +850,13 @@
                 filter: { onlyWrong: true, onlyNotEasy: false },
 
                 // Bug 回報資料
-                bugs: [],              // { qid, issue, status, note }
-                bugStatusOptions: ['未處理', '處理中', '已完成'],
-                editBug: { qid: '', issue: '', status: '未處理', note: '' },
+                bugs: [],              // { qid, issue, status, note, time }
+                bugStatusOptions: Object.values(BUG_STATUS),
+                editBug: { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED, note: '', time: '' },
                 editIndex: -1,
                 bugModal: null,
                 bugModalTitle: '',
-                bugSearch: { qid: '', issue: '', status: '未處理' },
+                bugSearch: { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED },
 
                 get statRows() {
                     let rows = Object.values(this.stats).map(s => ({ ...s }));
@@ -916,7 +930,7 @@
                         const res = await fetch('bug_reports.json');
                         if (res.ok) {
                             const arr = await res.json();
-                            if (Array.isArray(arr)) { this.bugs = arr; this.saveBugsToLS(); }
+                            if (Array.isArray(arr)) { this.bugs = arr.map(b => this.normalizeBug(b)); this.saveBugsToLS(); }
                         }
                     } catch (err) { console.warn('載入 bug 檔失敗', err); }
                 },
@@ -1049,19 +1063,26 @@
 
                 // —— Bug 回報處理 ——
                 loadBugsFromLS() {
-                    try { this.bugs = JSON.parse(localStorage.getItem('quizBugs') || '[]') || []; }
+                    try { this.bugs = (JSON.parse(localStorage.getItem('quizBugs') || '[]') || []).map(b => this.normalizeBug(b)); }
                     catch { this.bugs = []; }
                 },
                 saveBugsToLS() { localStorage.setItem('quizBugs', JSON.stringify(this.bugs)); },
                 openNewBugModal(qid = '') {
                     this.editIndex = -1;
-                    this.editBug = { qid: qid || '', issue: '', status: this.bugStatusOptions[0], note: '' };
+                    this.editBug = {
+                        qid: qid || '',
+                        issue: '',
+                        status: BUG_STATUS.UNRESOLVED,
+                        note: '',
+                        time: new Date().toISOString().slice(0,16)
+                    };
                     this.bugModalTitle = '新增 Bug';
                     this.showBugModal();
                 },
                 openEditBugModal(idx) {
                     this.editIndex = idx;
                     this.editBug = deepClone(this.bugs[idx]);
+                    this.editBug.time = this.editBug.time ? new Date(this.editBug.time).toISOString().slice(0,16) : new Date().toISOString().slice(0,16);
                     this.bugModalTitle = '編輯 Bug';
                     this.showBugModal();
                 },
@@ -1076,6 +1097,8 @@
                         return;
                     }
                     const obj = deepClone(this.editBug);
+                    obj.status = this.normalizeStatus(obj.status);
+                    obj.time = obj.time ? new Date(obj.time).toISOString() : new Date().toISOString();
                     if (this.editIndex === -1) { this.bugs.push(obj); }
                     else { this.bugs[this.editIndex] = obj; }
                     this.saveBugsToLS();
@@ -1097,12 +1120,25 @@
                         const text = await fileToText(file);
                         const arr = JSON.parse(text);
                         if (!Array.isArray(arr)) throw new Error('格式錯誤');
-                        this.bugs = arr;
+                        this.bugs = arr.map(b => this.normalizeBug(b));
                         this.syncBugsWithQuestions();
                         this.saveBugsToLS();
                         alert('匯入完成！');
                     } catch (err) { alert('匯入失敗：' + err.message); }
                     e.target.value = '';
+                },
+                openQbankPanel() {
+                    const panel = document.getElementById('qbankPanel');
+                    if (panel) {
+                        const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
+                        const willShow = !panel.classList.contains('show');
+                        if (willShow) {
+                            panel.addEventListener('shown.bs.collapse', () => {
+                                panel.scrollIntoView({ behavior: 'smooth' });
+                            }, { once: true });
+                        }
+                        bs.toggle();
+                    }
                 },
                 openRecordPanel() {
                     this.filter.onlyWrong = true;
@@ -1119,7 +1155,7 @@
                     }
                 },
                 openBugPanel() {
-                    this.bugSearch = { qid: '', issue: '', status: '未處理' };
+                    this.bugSearch = { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED };
                     const panel = document.getElementById('bugPanel');
                     if (panel) {
                         const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
@@ -1153,7 +1189,22 @@
                         return qMatch && iMatch && sMatch;
                     });
                 },
-                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: '未處理' }; },
+                clearBugSearch() { this.bugSearch = { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED }; },
+
+                normalizeStatus(s) {
+                    if (s === '已處理') return BUG_STATUS.DONE;
+                    return Object.values(BUG_STATUS).includes(s) ? s : BUG_STATUS.UNRESOLVED;
+                },
+
+                normalizeBug(b) {
+                    return {
+                        qid: b.qid || '',
+                        issue: b.issue || '',
+                        status: this.normalizeStatus(b.status),
+                        note: b.note || '',
+                        time: b.time ? new Date(b.time).toISOString() : new Date().toISOString()
+                    };
+                },
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
