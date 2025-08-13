@@ -133,23 +133,27 @@
         <div class="card card-soft mb-4" x-show="view==='home'">
             <div class="card-body">
                 <h2 class="h6">題庫統計摘要</h2>
-                <div class="row text-center mt-2">
-                    <div class="col-6 col-md-3">
+                <div class="row text-center mt-2 justify-content-center g-3">
+                    <div class="col-6 col-md-2">
                         <div class="small-muted">總題數</div>
                         <div class="h5" x-text="overallStats.total"></div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                         <div class="small-muted">未作答</div>
                         <div class="h5 text-warning" x-text="overallStats.unanswered"></div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                         <div class="small-muted">答錯/作答</div>
                         <div class="h5 text-danger"><span x-text="overallStats.wrong"></span>/<span
                                 x-text="overallStats.totalAttempts"></span></div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <div class="col-6 col-md-2">
                         <div class="small-muted">正確率</div>
                         <div class="h5 text-success" x-text="overallStats.accuracy + '%' "></div>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <div class="small-muted">未標簡單</div>
+                        <div class="h5 text-info" x-text="overallStats.notEasy"></div>
                     </div>
                 </div>
             </div>
@@ -1038,17 +1042,19 @@
 
                 get overallStats() {
                     const total = this.questions.length;
-                    let unanswered = 0, wrong = 0, correct = 0;
+                    let unanswered = 0, wrong = 0, correct = 0, easy = 0;
                     for (const q of this.questions) {
                         const s = this.stats[q.id] || this.defaultStat(q.id);
                         if ((s.attempts || 0) === 0) unanswered++;
                         wrong += s.wrong || 0;
                         correct += s.correct || 0;
+                        if (s.easy) easy++;
                     }
                     const totalAttempts = correct + wrong;
                     const answered = total - unanswered;
                     const accuracy = totalAttempts ? Math.round(correct / totalAttempts * 100) : 0;
-                    return { total, unanswered, answered, wrong, correct, totalAttempts, accuracy };
+                    const notEasy = total - easy;
+                    return { total, unanswered, answered, wrong, correct, totalAttempts, accuracy, easy, notEasy };
                 },
 
                 async init() {
@@ -1670,6 +1676,23 @@
                         this.root.stats[this.q.id].unsure = v;
                         this.root.saveStatsToLS();
                     });
+                    // 監聽「這題很簡單」變化並寫入紀錄（需已答對才算）
+                    this.$watch('markEasy', v => {
+                        if (!this.q) return;
+                        if (!this.root.stats[this.q.id]) {
+                            this.root.stats[this.q.id] = this.root.defaultStat(this.q.id);
+                        }
+                        const s = this.root.stats[this.q.id];
+                        if (!v) {
+                            s.easy = false;
+                            this.root.saveStatsToLS();
+                            return;
+                        }
+                        if (this.hasResult && this.isCorrect) {
+                            s.easy = true;
+                            this.root.saveStatsToLS();
+                        }
+                    });
                     this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
                 },
                 loadQuestion(q) {
@@ -1682,7 +1705,7 @@
                     this.hasResult = false;
                     this.isCorrect = false;
                     this.expOpen = false;
-                    this.markEasy = false;
+                    this.markEasy = !!this.stat.easy;
                     this.markUnsure = !!this.stat.unsure;
                 },
                 optionClass(id) {
