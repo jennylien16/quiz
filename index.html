@@ -593,7 +593,9 @@
                         </div>
                     </template>
                     <div class="d-flex gap-2 mt-2">
-                        <button class="btn btn-outline-secondary" @click="exitPreview()"><i class="bi bi-house"></i> 回首頁</button>
+                        <button class="btn btn-outline-secondary" @click="exitPreview()">
+                            <i class="bi bi-house"></i> 回首頁
+                        </button>
                         <button class="btn btn-outline-success" x-show="summary.total" @click="view='summary'"><i class="bi bi-flag"></i> 回本次成績</button>
                     </div>
                 </div>
