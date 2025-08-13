@@ -158,63 +158,7 @@
         <!-- 載入/設定 卡片 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
             <div class="card-body">
-                <!-- 開關折疊的按鈕 -->
-                <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#qbankPanel" aria-expanded="false" aria-controls="qbankPanel">
-                    題庫與紀錄管理
-                </button>
-
-                <!-- 可折疊的內容 -->
-                <div class="collapse" id="qbankPanel">
-                    <div class="row g-3">
-                        <div class="col-12 col-lg-6">
-                            <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
-                            <input type="file" class="form-control" accept=".json,application/json"
-                                @change="loadQuestionsFromFile($event)" />
-                            <div class="small text-secondary mt-2" x-show="questions.length===0">
-                                尚未載入題庫，可先載入下方「範例題庫」試用。
-                            </div>
-                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
-                                    <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()">
-                                    <i class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" :disabled="questions.length===0"
-                                    @click="downloadQuestions()">
-                                    <i class="bi bi-download" aria-hidden="true"></i> 下載
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-lg-6">
-                            <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
-                            <div class="d-flex flex-wrap gap-2">
-                                <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
-                                    @click="saveStatsFile()">
-                                    <i class="bi bi-save2" aria-hidden="true"></i> 儲存
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()">
-                                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入
-                                </button>
-                                <label class="btn btn-sm btn-outline-primary mb-0">
-                                    <i class="bi bi-upload" aria-hidden="true"></i> 匯入
-                                    <input type="file" class="d-none" accept=".json,application/json"
-                                        @change="importStatsFile($event)" />
-                                </label>
-                                <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()">
-                                    <i class="bi bi-trash3" aria-hidden="true"></i> 清空
-                                </button>
-                            </div>
-                            <!-- <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div> -->
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="my-4" />
-
-                <div class="row g-3 align-items-end mt-3">
+                <div class="row g-3 align-items-end mb-4">
                     <div class="col-12 col-md-3">
                         <label class="form-label">出題數</label>
                         <span class="small text-secondary mt-1">（題庫目前：<strong x-text="questions.length"></strong>
@@ -271,6 +215,62 @@
                         </div>
                     </div>
                 </div>
+                
+                <hr class="my-4" />
+                <!-- 開關折疊的按鈕 -->
+                <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#qbankPanel" aria-expanded="false" aria-controls="qbankPanel">
+                    題庫與紀錄管理
+                </button>
+
+                <!-- 可折疊的內容 -->
+                <div class="collapse" id="qbankPanel">
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-6">
+                            <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
+                            <input type="file" class="form-control" accept=".json,application/json"
+                                @change="loadQuestionsFromFile($event)" />
+                            <div class="small text-secondary mt-2" x-show="questions.length===0">
+                                尚未載入題庫，可先載入下方「範例題庫」試用。
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
+                                    <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()">
+                                    <i class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" :disabled="questions.length===0"
+                                    @click="downloadQuestions()">
+                                    <i class="bi bi-download" aria-hidden="true"></i> 下載
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="mb-2 fw-semibold">統計紀錄（第二個 JSON，純前端保存在瀏覽器）</div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-sm btn-outline-success" :disabled="Object.keys(stats).length===0"
+                                    @click="saveStatsFile()">
+                                    <i class="bi bi-save2" aria-hidden="true"></i> 儲存
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()">
+                                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入
+                                </button>
+                                <label class="btn btn-sm btn-outline-primary mb-0">
+                                    <i class="bi bi-upload" aria-hidden="true"></i> 匯入
+                                    <input type="file" class="d-none" accept=".json,application/json"
+                                        @change="importStatsFile($event)" />
+                                </label>
+                                <button class="btn btn-sm btn-outline-danger" @click="clearAllStats()">
+                                    <i class="bi bi-trash3" aria-hidden="true"></i> 清空
+                                </button>
+                            </div>
+                            <!-- <div class="small-muted mt-2">統計欄位：出題次數、錯誤次數、最後作答選項、是否標記「簡單」…等。</div> -->
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
