@@ -276,9 +276,11 @@
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stat?.easy)?'badge-easy':''"
                                         x-text="(stat?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted" x-show="(stat?.attempts||0)>0"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
-                                            x-text="stat?.wrong||0"></span>/<span
-                                            x-text="stat?.attempts||0"></span></div>
+                                    <template x-if="(stat?.wrong||0)+(stat?.attempts||0)>0">
+                                        <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
+                                                x-text="stat?.wrong||0"></span>/<span
+                                                x-text="stat?.attempts||0"></span></div>
+                                    </template>
                                 </div>
                             </div>
 
@@ -366,10 +368,11 @@
                     </template>
 
                     <template x-for="(q, idx) in quizSet" :key="q.id">
-                        <details class="border rounded-4 p-3 p-md-4 mb-3" :open="!(resultMap[q.id]==='correct' && !unsureMarkAll[q.id])">
+                        <details class="border rounded-4 p-3 p-md-4 mb-3" :open="!((resultMap[q.id]==='correct' && !unsureMarkAll[q.id]) || resultMap[q.id]==='unanswered')">
                             <summary class="d-flex align-items-center justify-content-between pointer">
                                 <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
                                 <span class="badge bg-success" x-show="resultMap[q.id]==='correct' && !unsureMarkAll[q.id]">答對</span>
+                                <span class="badge bg-warning text-dark" x-show="resultMap[q.id]==='unanswered'">未作答</span>
                             </summary>
                             <div class="d-flex align-items-start justify-content-between mt-3">
                                 <div>
@@ -383,7 +386,9 @@
                                         <i class="bi bi-bug"></i> Bug
                                     </button>
                                     <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted" x-show="(stats[q.id]?.attempts||0)>0"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
+                                    <template x-if="(stats[q.id]?.wrong||0)+(stats[q.id]?.attempts||0)>0">
+                                        <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
+                                    </template>
                                 </div>
                             </div>
 
@@ -522,7 +527,9 @@
                                 </div>
                                 <div class="text-end">
                                     <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
-                                    <div class="small-muted" x-show="(stats[q.id]?.attempts||0)>0"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
+                                    <template x-if="(stats[q.id]?.wrong||0)+(stats[q.id]?.attempts||0)>0">
+                                        <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
+                                    </template>
                                 </div>
                             </div>
                             <div class="mt-3">
@@ -539,7 +546,10 @@
                             </details>
                         </div>
                     </template>
-                    <button class="btn btn-outline-secondary mt-2" @click="exitPreview()"><i class="bi bi-house"></i> 回首頁</button>
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-outline-secondary" @click="exitPreview()"><i class="bi bi-house"></i> 回首頁</button>
+                        <button class="btn btn-outline-success" x-show="summary.total" @click="view='summary'"><i class="bi bi-flag"></i> 回本次成績</button>
+                    </div>
                 </div>
             </div>
         </template>
@@ -1146,14 +1156,14 @@
                     // 批改所有作答
                     for (const q of this.quizSet) {
                         const picked = Array.from(this.answers[q.id] || []);
-                        if (picked.length === 0) continue;
+                        if (picked.length === 0) { this.resultMap[q.id] = 'unanswered'; continue; }
                         const ok = this.isCorrectAnswer(q.answer, picked);
                         this.applyResult(q.id, ok, picked, this.easyMarkAll[q.id], this.unsureMarkAll[q.id]);
                         this.resultMap[q.id] = ok ? 'correct' : 'wrong';
                     }
                     // 以本次出題集為基準計算統計
                     const total = this.quizSet.length;
-                    const answeredIds = Object.keys(this.resultMap);
+                    const answeredIds = Object.keys(this.resultMap).filter(id => this.resultMap[id] !== 'unanswered');
                     const correct = answeredIds.filter(id => this.resultMap[id] === 'correct').length;
                     const wrongIds = answeredIds.filter(id => this.resultMap[id] === 'wrong');
                     const wrong = wrongIds.length;
@@ -1194,7 +1204,7 @@
                     let any = false;
                     for (const q of this.quizSet) {
                         const picked = Array.from(this.answers[q.id] || []);
-                        if (picked.length === 0) continue; // 未作答的不列入統計
+                        if (picked.length === 0) { this.resultMap[q.id] = 'unanswered'; continue; }
                         any = true;
                         const ok = this.isCorrectAnswer(q.answer, picked);
                         // 更新紀錄
@@ -1203,7 +1213,7 @@
                     }
                     if (!any) { alert('尚未作答任何題目'); return; }
                     const total = this.quizSet.length;
-                    const answeredIds = Object.keys(this.resultMap);
+                    const answeredIds = Object.keys(this.resultMap).filter(id => this.resultMap[id] !== 'unanswered');
                     const correct = answeredIds.filter(id => this.resultMap[id] === 'correct').length;
                     const wrongIds = answeredIds.filter(id => this.resultMap[id] === 'wrong');
                     const wrong = wrongIds.length;
