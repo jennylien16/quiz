@@ -258,6 +258,9 @@
                             <button class="btn btn-primary" :disabled="questions.length===0"
                                 @click="startQuiz('normal')"><i class="bi bi-play-circle" aria-hidden="true"></i>
                                 開始測驗</button>
+                            <button class="btn btn-outline-warning" :disabled="questions.length===0"
+                                    @click="startQuiz('unansweredOnly')"><i class="bi bi-patch-question"
+                                        aria-hidden="true"></i> 只出未作答題</button>
                             <button class="btn btn-outline-primary" :disabled="questions.length===0"
                                 @click="startQuiz('review')"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                                 錯題複習（優先）</button>
@@ -265,9 +268,6 @@
                                 @click="startQuiz('wrongOnly')"><i class="bi bi-exclamation-octagon"
                                     aria-hidden="true"></i>
                                 只出錯題</button>
-                            <button class="btn btn-outline-warning" :disabled="questions.length===0"
-                                @click="startQuiz('unansweredOnly')"><i class="bi bi-patch-question"
-                                    aria-hidden="true"></i> 只出未作答題</button>
                         </div>
                     </div>
                 </div>
