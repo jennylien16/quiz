@@ -1273,10 +1273,10 @@
                     // 取得根元件資料
                     this.root = Alpine.$data(this.$root);
                     // 監聽根元件的索引與題組變化以載入對應題目
-                    this.$watch(() => this.root.currentIndex, i => {
+                    this.$watch('root.currentIndex', i => {
                         this.loadQuestion(this.root.quizSet[i]);
                     });
-                    this.$watch(() => this.root.quizSet, () => {
+                    this.$watch('root.quizSet', () => {
                         this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
                     });
                     this.loadQuestion(this.root.quizSet[this.root.currentIndex]);
