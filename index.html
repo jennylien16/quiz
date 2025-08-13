@@ -267,8 +267,11 @@
                                             x-text="$root.quizSet.length"></span></div>
                                     <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="badge rounded-pill me-2" :class="(stat?.easy)?'badge-easy':''"
+                                <div class="text-end d-flex flex-column align-items-end">
+                                    <button class="btn btn-sm btn-outline-secondary mb-2" @click="$root.copyQuestion(q)">
+                                        <i class="bi bi-clipboard"></i> 複製
+                                    </button>
+                                    <span class="badge rounded-pill mb-1" :class="(stat?.easy)?'badge-easy':''"
                                         x-text="(stat?.easy)?'已標簡單':''"></span>
                                     <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger"
                                             x-text="stat?.wrong||0"></span>/<span
@@ -355,6 +358,11 @@
                         </div>
                     </div>
 
+                    <div class="alert alert-info mt-3" x-show="showScore" x-transition>
+                        <div>成績：<strong x-text="summary.correct"></strong>/<span x-text="summary.total"></span></div>
+                        <div class="small">答對 <span x-text="summary.correct"></span> 題 ｜ 答錯 <span x-text="summary.wrong"></span> 題 ｜ 未作答 <span x-text="summary.unanswered"></span> 題</div>
+                    </div>
+
                     <template x-if="quizSet.length===0">
                         <div class="alert alert-warning mt-3">此模式下沒有可出題目（可能沒有錯題或全部被標記為簡單）。</div>
                     </template>
@@ -368,8 +376,11 @@
                                             <div class="q-meta">題號：<span class="mono" x-text="q.id"></span> ｜ <span x-text="idx+1"></span>/<span x-text="quizSet.length"></span></div>
                                             <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                         </div>
-                                        <div class="text-end">
-                                            <span class="badge rounded-pill me-2" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
+                                        <div class="text-end d-flex flex-column align-items-end">
+                                            <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)">
+                                                <i class="bi bi-clipboard"></i> 複製
+                                            </button>
+                                            <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''" x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
                                             <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[q.id]?.wrong||0"></span>/<span x-text="stats[q.id]?.attempts||0"></span></div>
                                         </div>
                                     </div>
@@ -830,6 +841,8 @@
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
                     this.mode = mode; this.view = 'quiz'; this.currentIndex = 0; this.answers = {}; this.resultMap = {}; this.easyMarkAll = {}; this.unsureMarkAll = {};
+                    this.showScore = false;
+                    this.summary = { total: 0, correct: 0, wrong: 0, unanswered: 0, wrongList: [] };
                     clearInterval(this.timer);
                     const all = this.questions.slice();
                     // 過濾：排除已標簡單
@@ -917,6 +930,7 @@
                 exitQuiz() {
                     clearInterval(this.timer);
                     this.view = 'home';
+                    this.showScore = false;
                 },
 
                 // —— 一頁所有題：批改 ——
@@ -925,6 +939,12 @@
                     const set = this.answers[qid];
                     if (isMulti) { ev.target.checked ? set.add(optId) : set.delete(optId); }
                     else { this.answers[qid] = new Set([optId]); }
+                },
+                copyQuestion(q) {
+                    if (!q) return;
+                    const opts = (q.options || []).map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt.text}`).join('\n');
+                    const text = `${q.question}\n${opts}`;
+                    navigator.clipboard.writeText(text).then(() => alert('已複製題目與選項'));
                 },
                 submitAll() {
                     clearInterval(this.timer);
@@ -939,6 +959,18 @@
                         this.resultMap[q.id] = ok ? 'correct' : 'wrong';
                     }
                     if (!any) { alert('尚未作答任何題目'); return; }
+                    const total = this.quizSet.length;
+                    const answeredIds = Object.keys(this.resultMap);
+                    const correct = answeredIds.filter(id => this.resultMap[id] === 'correct').length;
+                    const wrongIds = answeredIds.filter(id => this.resultMap[id] === 'wrong');
+                    const wrong = wrongIds.length;
+                    const unanswered = total - answeredIds.length;
+                    const wrongList = wrongIds.map(id => {
+                        const q = this.quizSet.find(q => q.id === id);
+                        return q ? { id: q.id, question: q.question } : { id, question: '' };
+                    });
+                    this.summary = { total, correct, wrong, unanswered, wrongList };
+                    this.showScore = true;
                     this.saveStatsToLS();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
@@ -967,6 +999,7 @@
 
                 // —— 摘要資料容器 ——
                 summary: { total: 0, correct: 0, wrong: 0, unanswered: 0, wrongList: [] },
+                showScore: false,
             }
         }
 
