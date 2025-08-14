@@ -516,10 +516,10 @@
                         <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
                             回首頁</button>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" @click="submitAll()"><i class="bi bi-check2-circle"></i>
+                            <button class="btn btn-primary" @click="submitAll()" x-show="!showScore"><i class="bi bi-check2-circle"></i>
                                 批改全部</button>
                             <button class="btn btn-success" @click="finishAndSummary()"
-                                x-show="Object.keys(resultMap).length>0"><i class="bi bi-flag"></i> 結束並看成績</button>
+                                x-show="!showScore && Object.keys(resultMap).length>0"><i class="bi bi-flag"></i> 結束並看成績</button>
                             <button class="btn btn-outline-secondary" x-show="showScore" @click="returnToSummary()"><i
                                     class="bi bi-card-list"></i> 回本次成績</button>
                         </div>
