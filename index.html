@@ -920,9 +920,9 @@
 
     <div class="position-fixed" style="right:1rem; bottom:1rem; z-index:1000;">
         <div class="d-flex flex-column gap-2">
-            <button class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToTop()" title="回到頂端"><i
+            <button x-show="showTopBtn" class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToTop()" title="回到頂端"><i
                     class="bi bi-arrow-up"></i></button>
-            <button class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToBottom()" title="移到底部"><i
+            <button x-show="showBottomBtn" class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToBottom()" title="移到底部"><i
                     class="bi bi-arrow-down"></i></button>
         </div>
     </div>
@@ -1022,6 +1022,8 @@
                 showHelp: false,
                 debugMode: false,
                 version: 'v1.0',
+                showTopBtn: false,
+                showBottomBtn: false,
                 // 計時相關
                 perQuestionSec: 120,    // 每題秒數（秒）
                 timer: null,
@@ -1111,6 +1113,8 @@
                     if (this.easyFeatureOn) {
                         await this.loadEasyList();
                     }
+                    this.updateScrollButtons();
+                    window.addEventListener('scroll', () => this.updateScrollButtons());
                 },
 
                 // 預設載入題庫與紀錄檔
@@ -1644,6 +1648,10 @@
 
                 scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); },
                 scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); },
+                updateScrollButtons() {
+                    this.showTopBtn = window.scrollY > 0;
+                    this.showBottomBtn = window.innerHeight + window.scrollY < document.documentElement.scrollHeight;
+                },
 
                 // —— 一頁所有題：批改 ——
                 toggleAnswer(qid, optId, isMulti, ev) {
