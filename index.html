@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>出題系統 v1.0｜Alpine.js</title>
+    <title>出題系統 v1.0</title>
     <!-- Bootstrap 5 + Icons (純前端好排版) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -95,7 +95,7 @@
         <!-- 標題列 -->
         <div class="d-flex align-items-center justify-content-between mb-3">
             <h1 class="h4 mb-0">出題系統 <span class="small text-secondary" x-text="version"></span> <span
-                    class="small text-secondary">｜Alpine.js</span></h1>
+                     class="small text-secondary"><!--｜Alpine.js --></span></h1>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
                     <i class="bi bi-collection" aria-hidden="true"></i>
@@ -128,6 +128,16 @@
                 視為複選）。<br>解析欄位可放 HTML，建議使用 <span
                     class="mono">&lt;details&gt;&lt;summary&gt;答案與解析&lt;/summary&gt;...&lt;/details&gt;</span> 結構。</div>
         </div>
+
+        <!-- news -->
+        <!-- <div class="card card-soft mb-4" x-show="view==='home'">
+            <div class="card-body">
+                <h2 class="h6">新功能！</h2>
+                <div class="row text-center mt-2 justify-content-center g-3">
+                    
+                </div>
+            </div>
+        </div> -->
 
         <!-- 統計摘要 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
@@ -245,9 +255,9 @@
                                     <i class="bi bi-cloud-arrow-down"></i> 雲端硬碟
                                 </button>
                                 -->
-                                <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
+                                <!-- <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
                                     <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
-                                </button>
+                                </button> -->
                                 <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()">
                                     <i class="bi bi-file-earmark" aria-hidden="true"></i> 載入專案
                                 </button>
@@ -265,9 +275,9 @@
                                     @click="saveStatsFile()">
                                     <i class="bi bi-save2" aria-hidden="true"></i> 儲存
                                 </button>
-                                <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()">
+                                <!-- <button class="btn btn-sm btn-outline-secondary" @click="loadStatsFromFile()">
                                     <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> 載入
-                                </button>
+                                </button> -->
                                 <label class="btn btn-sm btn-outline-primary mb-0">
                                     <i class="bi bi-upload" aria-hidden="true"></i> 匯入
                                     <input type="file" class="d-none" accept=".json,application/json"
@@ -779,12 +789,12 @@
                             <select class="form-select" x-model="bugSearch.status">
                                 <option value="">全部狀態</option>
                                 <template x-for="s in bugStatusOptions" :key="s">
-                                    <option :value="s" x-text="s"></option>
+                                    <option :value="s.trim()" x-text="s"></option>
                                 </template>
                             </select>
                         </div>
                         <div class="col-6 col-md-2 d-grid">
-                            <button class="btn btn-outline-secondary" @click="clearBugSearch()">清除搜尋</button>
+                            <button class="btn btn-outline-secondary" @click="clearBugSearch();">清除搜尋</button>
                         </div>
                     </div>
 
@@ -806,19 +816,29 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <template x-for="b in filteredBugs()" :key="b.qid || b.time">
+                                <template x-for="(b, index) in filteredBugs()" :key="index">
                                     <tr>
                                         <td class="mono" x-text="b.qid || '-' "></td>
                                         <td x-text="b.issue || '-' "></td>
                                         <td x-text="b.time ? new Date(b.time).toLocaleDateString() : '-' "></td>
                                         <td x-text="b.note || '-' "></td>
                                         <td>
-                                            <select class="form-select form-select-sm" x-model="b.status"
-                                                @change="saveBugsToLS()">
-                                                <template x-for="s in bugStatusOptions" :key="s">
-                                                    <option :value="s" x-text="s"></option>
-                                                </template>
-                                            </select>
+                                            <div x-data="{ editing:false, val:'' }">
+                                                <!-- 顯示模式 -->
+                                                <span x-show="!editing" @click="val = (b.status ?? '').toString().trim(); editing = true"
+                                                    class="cursor-pointer">
+                                                    <span x-text="(b.status ?? '').toString().trim() || '-'"></span>
+                                                    <i class="bi bi-caret-down-fill ms-1"></i>
+                                                </span>
+                                        
+                                                <!-- 編輯模式 -->
+                                                <select x-show="editing" class="form-select form-select-sm" x-model="val"
+                                                    @change="b.status = val; saveBugsToLS(); editing = false" @blur="editing = false">
+                                                    <template x-for="s in bugStatusOptions" :key="s">
+                                                        <option :value="s" x-text="s"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
                                         </td>
                                         <td>
                                             <div class="btn-group btn-group-sm" role="group">
@@ -1007,7 +1027,7 @@
 
                 // Bug 回報資料
                 bugs: [],              // { qid, issue, status, note, time }
-                bugStatusOptions: Object.values(BUG_STATUS),
+                bugStatusOptions: Object.values(BUG_STATUS).map(s => s.trim()),
                 editBug: { qid: '', issue: '', status: BUG_STATUS.UNRESOLVED, note: '', time: '' },
                 editIndex: -1,
                 bugModal: null,
@@ -1432,13 +1452,15 @@
                     this.openNewBugModal(qid);
                 },
                 filteredBugs() {
+                    const norm = v => (v ?? '').toString().trim();
+                    const q = norm(this.bugSearch.qid);
+                    const i = norm(this.bugSearch.issue);
+                    const s = norm(this.bugSearch.status); // 中文 or 空字串
+
                     return this.bugs.filter(b => {
-                        const q = this.bugSearch.qid.trim();
-                        const i = this.bugSearch.issue.trim();
-                        const s = this.bugSearch.status;
-                        const qMatch = !q || (b.qid || '').includes(q);
-                        const iMatch = !i || (b.issue || '').includes(i);
-                        const sMatch = !s || b.status === s;
+                        const qMatch = !q || norm(b.qid).includes(q);
+                        const iMatch = !i || norm(b.issue).includes(i);
+                        const sMatch = !s || norm(b.status) === s;
                         return qMatch && iMatch && sMatch;
                     });
                 },
