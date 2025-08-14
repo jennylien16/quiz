@@ -90,6 +90,7 @@
 </head>
 
 <body x-data="quizApp()" x-init="init()" class="py-4">
+    <div class="alert alert-info text-center" x-show="easyFeatureOn">2024-05-30 新增簡單題號匯出功能</div>
     <div class="container-xxl">
 
         <!-- 標題列 -->
@@ -692,6 +693,8 @@
                                     class="bi bi-journal-text"></i> 題庫+詳解</button>
                             <button class="btn btn-sm btn-outline-danger" @click="showWrongWithExp()"><i
                                     class="bi bi-x-circle"></i> 錯題+詳解</button>
+                            <button class="btn btn-sm btn-outline-success" x-show="easyFeatureOn" @click="exportEasyIds()"><i
+                                    class="bi bi-download"></i> 匯出簡單題號</button>
                             <button class="btn btn-sm btn-outline-secondary" @click="openRecordPanel()" title="關閉紀錄管理"><i
                                     class="bi bi-x"></i> </button>
                         </div>
@@ -1012,6 +1015,8 @@
                 resultMap: {},          // qid -> 'correct' | 'wrong'
                 easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
+                easyFeatureOn: false,   // 啟用 easy.json 功能的開關
+                easyIds: new Set(),
                 previewSet: [],
                 previewTitle: '',
                 showHelp: false,
@@ -1103,6 +1108,9 @@
                         this.syncStatsWithQuestions();
                         this.syncBugsWithQuestions();
                     }
+                    if (this.easyFeatureOn) {
+                        await this.loadEasyList();
+                    }
                 },
 
                 // 預設載入題庫與紀錄檔
@@ -1140,6 +1148,21 @@
                             if (Array.isArray(arr)) { this.bugs = arr.map(b => this.normalizeBug(b)); this.saveBugsToLS(); }
                         }
                     } catch (err) { console.warn('載入 bug 檔失敗', err); }
+                },
+                async loadEasyList() {
+                    try {
+                        const res = await fetch('easy.json', { cache: 'no-store' });
+                        if (res.ok) {
+                            const text = await res.text();
+                            const ids = text.split(',').map(s => s.trim()).filter(Boolean);
+                            this.easyIds = new Set(ids);
+                            for (const id of this.easyIds) {
+                                if (!this.stats[id]) this.stats[id] = this.defaultStat(id);
+                                this.stats[id].easy = true;
+                            }
+                            this.saveStatsToLS();
+                        }
+                    } catch (err) { console.warn('載入 easy.json 失敗', err); }
                 },
 
                 // —— 題庫載入 ——
@@ -1253,6 +1276,16 @@
                 },
                 saveStatsToLS() { localStorage.setItem('quizStats', JSON.stringify(this.stats)); },
                 saveStatsFile() { downloadJSON(this.stats, 'quiz_stats.json'); },
+                exportEasyIds() {
+                    const ids = Object.entries(this.stats)
+                        .filter(([_, s]) => s.easy)
+                        .map(([id]) => id);
+                    const blob = new Blob([ids.join(',')], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'easy_export.txt'; a.click();
+                    URL.revokeObjectURL(url);
+                },
                 async importStatsFile(e) {
                     const file = e.target.files?.[0]; if (!file) return;
                     try {
