@@ -112,11 +112,15 @@
                 <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp" title="說明">
                     <i class="bi bi-question-circle" aria-hidden="true"></i>
                 </button>
+                <button class="btn btn-outline-secondary btn-sm" @click="closeAllPanels()" title="關閉全部">
+                    <i class="bi bi-x-circle" aria-hidden="true"></i>
+                </button>
             </div>
         </div>
 
         <!-- 使用說明 -->
-        <div class="alert alert-info py-3" x-show="showHelp" x-transition>
+        <div class="alert alert-info py-3 position-relative" x-show="showHelp" x-transition>
+            <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="showHelp=false" title="關閉說明"><i class="bi bi-x"></i></button>
             <div class="fw-bold mb-1">快速使用：</div>
             <ol class="mb-2">
                 <li>用「載入題庫」選擇 <span class="mono">question.json</span>（題庫格式見下方備註）。</li>
@@ -240,7 +244,8 @@
                 -->
 
                 <!-- 可折疊的內容 -->
-                <div class="collapse" id="qbankPanel">
+                <div class="collapse position-relative" id="qbankPanel">
+                    <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="openQbankPanel()" title="關閉題庫管理"><i class="bi bi-x"></i></button>
                     <div class="row g-3">
                         <div class="col-12 col-lg-6">
                             <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
@@ -661,7 +666,8 @@
 
         <!-- 紀錄管理（可折疊） -->
         <div id="recordPanel" class="collapse mt-4">
-            <div class="card card-soft">
+            <div class="card card-soft position-relative">
+                <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="openRecordPanel()" title="關閉紀錄管理"><i class="bi bi-x"></i></button>
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <h2 class="h6 mb-0">統計紀錄檢視</h2>
@@ -752,7 +758,8 @@
 
         <!-- Bug 回報區 -->
         <div id="bugPanel" class="collapse mt-4">
-            <div class="card card-soft">
+            <div class="card card-soft position-relative">
+                <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="openBugPanel()" title="關閉 Bug 回報區"><i class="bi bi-x"></i></button>
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <h2 class="h6 mb-0">Bug (假的)回報區</h2>
@@ -1441,14 +1448,17 @@
                         bs.toggle();
                     }
                 },
+                closeAllPanels() {
+                    this.showHelp = false;
+                    ['qbankPanel', 'recordPanel', 'bugPanel'].forEach(id => {
+                        const p = document.getElementById(id);
+                        if (p) {
+                            const bs = bootstrap.Collapse.getOrCreateInstance(p, { toggle: false });
+                            bs.hide();
+                        }
+                    });
+                },
                 openBug(qid) {
-                    const currentY = window.scrollY;
-                    const panel = document.getElementById('bugPanel');
-                    if (panel) {
-                        const bs = bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false });
-                        bs.show();
-                    }
-                    window.scrollTo({ top: currentY });
                     this.openNewBugModal(qid);
                 },
                 filteredBugs() {
@@ -1483,6 +1493,7 @@
 
                 // —— 建立出題清單 ——
                 startQuiz(mode) {
+                    this.closeAllPanels();
                     this.mode = mode; this.view = 'quiz'; this.currentIndex = 0; this.answers = {}; this.resultMap = {}; this.easyMarkAll = {}; this.unsureMarkAll = {};
                     this.showScore = false;
                     this.summary = { total: 0, correct: 0, wrong: 0, unanswered: 0, wrongList: [] };
