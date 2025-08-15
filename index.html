@@ -147,10 +147,11 @@
                     <div class="fc-item px-5">
                         <span class="badge text-bg-light border fw-normal" x-text="(current + 1) + ' / ' + items.length"></span>
         
-                        <span class="fw-semibold clamp-1" x-text="f.content"></span>
-        
+                        <span class="fw-semibold clamp-1" x-text="f.content" :title="f.content"></span>
+
                         <span class="text-secondary small ms-auto date-nowrap">
-                            <i class="bi bi-calendar3 me-1"></i><time x-text="f.date"></time>
+                            <i class="bi bi-calendar3 me-1"></i>
+                            <time x-text="f.date.slice(5).replace('-', '/')"></time>
                         </span>
                     </div>
                 </template>
