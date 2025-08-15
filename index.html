@@ -357,6 +357,11 @@
                                 @click="startQuiz('wrongOnly')"><i class="bi bi-exclamation-octagon"
                                     aria-hidden="true"></i>
                                 只出錯題</button>
+                            <button class="btn btn-outline-success"
+                                :disabled="questions.length===0 || noWrongNotEasyCount===0"
+                                @click="startQuiz('noWrongNotEasy')"
+                                :title="`共有${noWrongNotEasyCount}題`"><i class="bi bi-check-circle"
+                                    aria-hidden="true"></i> 未標簡單且未答錯題</button>
                         </div>
                     </div>
                 </div>
@@ -1174,8 +1179,8 @@
                 view: 'home',            // home | quiz | summary | preview
                 prevView: 'home',
                 pageMode: localStorage.getItem('pageMode') || 'all',         // one | all
-                mode: 'normal',          // normal | review | wrongOnly | unansweredOnly
-                get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題', unansweredOnly: '只出未作答題' }[this.mode] },
+                mode: 'normal',          // normal | review | wrongOnly | unansweredOnly | noWrongNotEasy
+                get modeLabel() { return { normal: '一般測驗', review: '錯題複習（優先）', wrongOnly: '只出錯題', unansweredOnly: '只出未作答題', noWrongNotEasy: '未錯且未標簡單題' }[this.mode] },
                 questions: [],
                 quizSet: [],
                 currentIndex: 0,
@@ -1273,6 +1278,13 @@
                     const accuracy = totalAttempts ? Math.round(correct / totalAttempts * 100) : 0;
                     const notEasy = total - easy;
                     return { total, unanswered, answered, wrong, correct, totalAttempts, accuracy, easy, notEasy };
+                },
+
+                get noWrongNotEasyCount() {
+                    return this.questions.filter(q => {
+                        const s = this.stats[q.id] || {};
+                        return !this.easyIds.has(q.id) && !s.easy && (s.wrong || 0) === 0;
+                    }).length;
                 },
 
                 get visibleFeatures() { return this.featureList.filter(f => f.show); },
@@ -1721,15 +1733,23 @@
                     this.summary = { total: 0, correct: 0, wrong: 0, unanswered: 0, wrongList: [] };
                     clearInterval(this.timer);
                     const all = this.questions.slice();
-                    // 過濾：排除已標簡單及開發者標示簡單
-                    let pool = all.filter(q => (!this.excludeDevEasy || !this.easyIds.has(q.id)) && (!this.excludeEasy || !(this.stats[q.id]?.easy)));
+                    let pool;
+                    if (mode === 'noWrongNotEasy') {
+                        pool = all.filter(q => {
+                            const s = this.stats[q.id] || {};
+                            return !this.easyIds.has(q.id) && !s.easy && (s.wrong || 0) === 0;
+                        });
+                    } else {
+                        // 過濾：排除已標簡單及開發者標示簡單
+                        pool = all.filter(q => (!this.excludeDevEasy || !this.easyIds.has(q.id)) && (!this.excludeEasy || !(this.stats[q.id]?.easy)));
 
-                    if (mode === 'wrongOnly') {
-                        pool = pool.filter(q => (this.stats[q.id]?.wrong || 0) > 0);
-                    }
+                        if (mode === 'wrongOnly') {
+                            pool = pool.filter(q => (this.stats[q.id]?.wrong || 0) > 0);
+                        }
 
-                    if (mode === 'unansweredOnly') {
-                        pool = pool.filter(q => (this.stats[q.id]?.attempts || 0) === 0);
+                        if (mode === 'unansweredOnly') {
+                            pool = pool.filter(q => (this.stats[q.id]?.attempts || 0) === 0);
+                        }
                     }
 
                     // 未作答優先，其次依錯誤率排序
