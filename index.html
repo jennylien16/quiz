@@ -1203,11 +1203,8 @@
                         if (res.ok) {
                             const arr = await res.json();
                             if (Array.isArray(arr)) {
+                                // 僅載入開發者標記的簡單題號，不異動使用者的作答紀錄
                                 this.easyIds = new Set(arr.map(id => String(id)));
-                                for (const id of this.easyIds) {
-                                    if (!this.stats[id]) this.stats[id] = this.defaultStat(id);
-                                }
-                                this.saveStatsToLS();
                             }
                         }
                     } catch (err) { console.warn('載入 easy.json 失敗', err); }
