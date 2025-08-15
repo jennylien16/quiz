@@ -173,11 +173,11 @@
             <h1 class="h4 mb-0 pointer" @click="exitQuiz()">出題系統 <span class="small text-secondary" x-text="version"></span> <span
                      class="small text-secondary"><!--｜Alpine.js --></span></h1>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
-                    <i class="bi bi-collection" aria-hidden="true"></i>
-                </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="openQbankPanel()" title="題庫管理">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
+                    <i class="bi bi-collection" aria-hidden="true"></i>
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()" title="Bug 回報">
                     <i class="bi bi-bug" aria-hidden="true"></i>
