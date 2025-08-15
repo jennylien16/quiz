@@ -86,34 +86,86 @@
         .mono {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
         }
+
+        /* 輪播容器 */
+        .feature-carousel {
+        --fc-nav-size: 32px; /* 箭頭大小 */
+        --fc-gutter: 40px;   /* 每張內容左右安全邊界 */
+        position: relative;
+        }
+
+        /* Viewport 只負責裁切，不能加 padding */
+        .fc-viewport {
+        position: relative;
+        overflow: hidden;
+        }
+
+        /* 軌道與每張 */
+        .fc-track { display: flex; transition: transform 600ms ease-in-out !important; }
+        .fc-item  {
+        flex: 0 0 100%; min-width: 0;
+        display: flex; align-items: center; gap: .5rem;
+        padding: .25rem var(--fc-gutter); /* ← 改在這裡留內距，就不會漏 */
+        }
+
+        /* 箭頭置中 */
+        .fc-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: var(--fc-nav-size); height: var(--fc-nav-size);
+        display: grid; place-items: center; padding: 0; z-index: 2;
+        }
+        .fc-prev { left: 8px; }
+        .fc-next { right: 8px; }
+
+        /* 圓點 */
+        .fc-dot { display:inline-block; width:10px; aspect-ratio:1/1; border-radius:50%; border:1px solid rgba(0,0,0,.15); }
+        .fc-dot.active { background: rgba(0,0,0,.5); }
+        .fc-dot.inactive { background: rgba(0,0,0,.08); }
+
+        /* 文字輔助 */
+        .clamp-1 { display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+        .date-nowrap { white-space: nowrap; }
     </style>
 </head>
 
 <body x-data="quizApp()" x-init="init()" class="py-4">
-    <div x-data="featureCarousel(visibleFeatures)" x-show="items.length > 0"
-        class="alert alert-info text-center overflow-hidden">
-        <div class="d-flex" :style="{ transform: `translateX(-${current * 100}%)`, transition: 'transform 0.5s' }">
-            <template x-for="(f, i) in items" :key="i">
-                <div class="w-100 flex-shrink-0" x-text="f.date + ' ' + f.content"></div>
-            </template>
-        </div>
-        <!-- <div class="d-flex justify-content-center mt-1">
-            <template x-for="(f, i) in items" :key="'dot' + i">
-                <span class="mx-1 rounded-circle"
-                    :class="{ 'bg-secondary': current === i, 'bg-light': current !== i }"
-                    style="width:8px;height:8px;display:inline-block;"></span>
-            </template>
-        </div> -->
-        <div class="d-flex justify-content-center align-items-center gap-3 mt-1">
-            <button class="btn btn-outline-secondary" @click="current = (current + items.length - 1) % items.length">
+    <!-- 輪撥 -->
+    <div x-data="featureCarousel(featureList, { interval: 4000 })" x-init="init()" x-show="items.length > 0"
+        class="feature-carousel alert alert-info text-center" @mouseenter="pause()" @mouseleave="play()"
+        @keydown.left.prevent="prev()" @keydown.right.prevent="next()" tabindex="0">
+    
+        <div class="fc-viewport">
+            <button class="fc-nav fc-prev btn btn-sm btn-outline-secondary" @click="prev()" aria-label="上一則">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            <span x-text="(current + 1) + '/' + items.length"></span>
-            <button class="btn btn-outline-secondary" @click="current = (current + 1) % items.length">
+            <button class="fc-nav fc-next btn btn-sm btn-outline-secondary" @click="next()" aria-label="下一則">
                 <i class="bi bi-chevron-right"></i>
             </button>
+        
+            <div class="fc-track" :style="{ transform: `translateX(-${current * 100}%)` }">
+                <template x-for="(f, i) in items" :key="i">
+                    <div class="fc-item px-5">
+                        <span class="badge text-bg-light border fw-normal" x-text="(current + 1) + ' / ' + items.length"></span>
+        
+                        <span class="fw-semibold clamp-1" x-text="f.content"></span>
+        
+                        <span class="text-secondary small ms-auto date-nowrap">
+                            <i class="bi bi-calendar3 me-1"></i><time x-text="f.date"></time>
+                        </span>
+                    </div>
+                </template>
+            </div>
+        </div>
+        
+        <!-- 底下圓點 -->
+        <div class="d-flex justify-content-center gap-2 mt-1">
+            <template x-for="(f, i) in items" :key="'dot' + i">
+                <button class="fc-dot" :class="current === i ? 'active' : 'inactive'" @click="go(i)"
+                    :aria-label="`第 ${i+1} 則`"></button>
+            </template>
         </div>
     </div>
+
     <div class="container-xxl">
 
         <!-- 標題列 -->
@@ -977,15 +1029,40 @@
             return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
         };
 
-        const featureCarousel = (items) => ({
-            items,
-            current: 0,
-            init() {
-                if (this.items.length > 0) {
-                    setInterval(() => { this.current = (this.current + 1) % this.items.length; }, 4000);
-                }
-            }
-        });
+        const featureCarousel = (items, opts = {}) => ({
+                raw: Array.isArray(items) ? items : [],
+                items: [],
+                current: 0,
+                timer: null,
+                interval: opts.interval ?? 1000, // 預設每秒換一則
+
+                init() {
+                    // 只保留 show=true
+                    this.items = this.raw.filter(x => x?.show);
+                    if (this.items.length > 1) this.play();
+
+                    // 觸控滑動（手機可左右滑）
+                    let sx = 0;
+                    this.$el.addEventListener('touchstart', e => { sx = e.changedTouches[0].clientX; }, { passive: true });
+                    this.$el.addEventListener('touchend', e => {
+                        const dx = e.changedTouches[0].clientX - sx;
+                        if (Math.abs(dx) > 40) (dx < 0 ? this.next() : this.prev());
+                    }, { passive: true });
+                },
+
+                play() {
+                    this.pause();
+                    if (this.items.length > 1) {
+                        this.timer = setInterval(() => this.next(), this.interval);
+                    }
+                },
+                pause() {
+                    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+                },
+                next() { this.current = (this.current + 1) % this.items.length; },
+                prev() { this.current = (this.current + this.items.length - 1) % this.items.length; },
+                go(i) { this.current = i; this.play(); }
+            });
 
         const BUG_STATUS = Object.freeze({
             UNRESOLVED: '未處理',
@@ -1062,7 +1139,8 @@
                 easyIds: new Set(),
                 featureList: [
                     { date: '2024-05-30', content: '新增簡單題號匯出功能', show: false },
-                    { date: '2024-06-01', content: '第二項新功能', show: false }
+                    { date: '2024-06-01', content: '第二項新功能', show: false },
+                    { date: '2024-06-01', content: '第三項新功能', show: false }
                 ],// 改這裡
                 previewSet: [],
                 previewTitle: '',
