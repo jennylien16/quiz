@@ -1283,7 +1283,7 @@
                 get noWrongNotEasyCount() {
                     return this.questions.filter(q => {
                         const s = this.stats[q.id] || {};
-                        return !this.easyIds.has(q.id) && !s.easy && (s.wrong || 0) === 0;
+                        return (!this.excludeDevEasy || !this.easyIds.has(q.id)) && !s.easy && (s.wrong || 0) === 0;
                     }).length;
                 },
 
@@ -1737,7 +1737,7 @@
                     if (mode === 'noWrongNotEasy') {
                         pool = all.filter(q => {
                             const s = this.stats[q.id] || {};
-                            return !this.easyIds.has(q.id) && !s.easy && (s.wrong || 0) === 0;
+                            return (!this.excludeDevEasy || !this.easyIds.has(q.id)) && !s.easy && (s.wrong || 0) === 0;
                         });
                     } else {
                         // 過濾：排除已標簡單及開發者標示簡單
