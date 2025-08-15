@@ -245,10 +245,10 @@
         <div x-show="modalOpen" x-transition.opacity class="fc-modal__backdrop" role="dialog" aria-modal="true"
             aria-labelledby="fcModalTitle" @click.self="closeModal()" @keydown.escape.prevent="closeModal()">
             <div class="fc-modal__panel position-relative p-3" @click.stop tabindex="-1" x-ref="modalPanel">
-                <button type="button" class="btn btn-sm btn-outline-secondary fc-modal__close" @click="closeModal()"
-                    aria-label="關閉">✕</button>
+                <!-- <button type="button" class="btn btn-sm btn-outline-secondary fc-modal__close" @click="closeModal()"
+                    aria-label="關閉">✕</button> -->
         
-                <div id="fcModalTitle" class="small text-secondary mb-2">
+                <div id="fcModalTitle" class="small text-secondary">
                     <span x-text="(modalIndex + 1) + ' / ' + items.length"></span>
                     <span class="fs-6 ms-1" x-text="modalItem?.content"></span>
                 </div>
