@@ -172,7 +172,7 @@
 
 <body x-data="quizApp()" x-init="init()" class="py-4">
     <!-- 輪撥 -->
-    <div x-data="featureCarousel(featureList, { interval: 4000 })" x-init="init()" x-show="items.length > 0"
+    <div x-data="featureCarousel(featureList, { interval: 4000 })" x-init="init()" x-show="items.length > 0 && view==='home'"
         class="feature-carousel alert alert-info text-center" @mouseenter="pause()" @mouseleave="play()"
         @keydown.left.prevent="prev()" @keydown.right.prevent="next()" tabindex="0">
 
@@ -220,7 +220,7 @@
                 <button class="btn btn-outline-secondary btn-sm" @click="openQbankPanel()" title="題庫管理">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
+                <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel();refreshStatsIds();" title="紀錄管理">
                     <i class="bi bi-collection" aria-hidden="true"></i>
                 </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()" title="Bug 回報">
@@ -824,14 +824,14 @@
                             </div>
                             <input type="text" class="form-control form-control-sm" placeholder="搜尋題號"
                                 x-model="recordSearch" style="width:8rem;" />
-                            <button class="btn btn-sm btn-outline-secondary" @click="refreshStatsIds()"><i
-                                    class="bi bi-arrow-clockwise"></i> 更新題號</button>
+                            <!-- <button class="btn btn-sm btn-outline-secondary" @click="refreshStatsIds()"><i
+                                    class="bi bi-arrow-clockwise"></i> 更新題號</button> -->
                             <!-- <button class="btn btn-sm btn-outline-secondary" @click="saveStatsFile()"><i
                                     class="bi bi-download"></i> 匯出</button> -->
                             <button class="btn btn-sm btn-outline-primary" @click="showAllWithExp()"><i
-                                    class="bi bi-journal-text"></i> 題庫+詳解</button>
+                                    class="bi bi-journal-text"></i> 題庫</button>
                             <button class="btn btn-sm btn-outline-danger" @click="showWrongWithExp()"><i
-                                    class="bi bi-x-circle"></i> 錯題+詳解</button>
+                                    class="bi bi-x-circle"></i> 錯題</button>
                             <button class="btn btn-sm btn-outline-success" x-show="easyFeatureOn"
                                 @click="exportEasyIds()"><i class="bi bi-download"></i> 匯出簡單題號</button>
                             <button class="btn btn-sm btn-outline-secondary" @click="openRecordPanel()"
@@ -1193,10 +1193,10 @@
                 resultMap: {},          // qid -> 'correct' | 'wrong'
                 easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
-                easyFeatureOn: false,   // 啟用 easy.json 功能的開關，改這裡
+                easyFeatureOn: true,   // 啟用 easy.json 功能的開關，改這裡
                 easyIds: new Set(),
                 featureList: [
-                    { date: '2024-05-30', content: '新增簡單題號匯出功能', show: false },
+                    { date: '2024-08-15', content: '新增開發者認為太簡單題排除功能（預設開啟）', show: true },
                     { date: '2024-06-01', content: '第二項新功能', show: false },
                     { date: '2024-06-01', content: '第三項新功能', show: false }
                 ],// 改這裡
