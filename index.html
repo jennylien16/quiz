@@ -167,31 +167,63 @@
         .date-nowrap {
             white-space: nowrap;
         }
+
+        /* Minimal Modal */
+        .fc-modal__backdrop {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;   /* 垂直置中 */
+        justify-content: center; /* 水平置中 */
+        background: rgba(0,0,0,.5);
+        z-index: 2000;
+        }
+
+        .fc-modal__panel {
+        background: #fff;
+        border-radius: .5rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,.2);
+        width: min(640px, 92vw);
+        max-height: 80vh;
+        overflow: auto;
+        }
+
+        .fc-modal__close {
+        position: absolute; top: .5rem; right: .5rem;
+        }
+        @media (max-width: 576px) {
+        .fc-modal__panel { width: 94vw; max-height: 86vh; }
+        }
+
     </style>
 </head>
 
 <body x-data="quizApp()" x-init="init()" class="py-4">
     <!-- 輪撥 -->
-    <div x-data="featureCarousel(featureList, { interval: 4000 })" x-init="init()" x-show="items.length > 0 && view==='home'"
-        class="feature-carousel alert alert-info text-center" @mouseenter="pause()" @mouseleave="play()"
-        @keydown.left.prevent="prev()" @keydown.right.prevent="next()" tabindex="0">
-
+    <!-- 輪撥 -->
+    <div x-data="featureCarousel(featureList, { interval: 4000 })" x-init="init()"
+        x-show="items.length > 0 && view==='home'" class="feature-carousel alert alert-info text-center"
+        @mouseenter="pause()" @mouseleave="play()" tabindex="0" @keydown.left.prevent="modalOpen ? null : prev()"
+        @keydown.right.prevent="modalOpen ? null : next()" @keydown.escape.prevent="modalOpen && closeModal()">
+    
         <div class="fc-viewport">
-            <button class="fc-nav fc-prev btn btn-sm btn-outline-secondary" @click="prev()" aria-label="上一則">
+            <button class="fc-nav fc-prev btn btn-sm btn-outline-secondary" @click="modalOpen ? null : prev()"
+                aria-label="上一則">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            <button class="fc-nav fc-next btn btn-sm btn-outline-secondary" @click="next()" aria-label="下一則">
+            <button class="fc-nav fc-next btn btn-sm btn-outline-secondary" @click="modalOpen ? null : next()"
+                aria-label="下一則">
                 <i class="bi bi-chevron-right"></i>
             </button>
-
+    
             <div class="fc-track" :style="{ transform: `translateX(-${current * 100}%)` }">
                 <template x-for="(f, i) in items" :key="i">
                     <div class="fc-item px-5 pointer" @click="openModal(f, i)">
                         <span class="badge text-bg-light border fw-normal"
                             x-text="(current + 1) + ' / ' + items.length"></span>
-
+    
                         <span class="fw-semibold clamp-1" x-text="f.content" :title="f.content"></span>
-
+    
                         <span class="text-secondary small ms-auto date-nowrap">
                             <i class="bi bi-calendar3 me-1"></i>
                             <time x-text="f.date.slice(5).replace('-', '/')"></time>
@@ -200,7 +232,7 @@
                 </template>
             </div>
         </div>
-
+    
         <!-- 底下圓點 -->
         <div class="d-flex justify-content-center gap-2 mt-1">
             <template x-for="(f, i) in items" :key="'dot' + i">
@@ -209,15 +241,20 @@
             </template>
         </div>
 
-        <!-- 簡易 Modal -->
-        <!-- <div x-show="modalOpen" @click.self="closeModal()"
-            class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-            style="background: rgba(0, 0, 0, .5); z-index: 2000;" x-transition>
-            <div class="bg-white rounded p-3 mx-3 text-start">
-                <div class="mb-2"><span x-text="(modalIndex + 1) + ' / ' + items.length"></span></div>
-                <div x-text="modalItem?.content"></div>
+        <!-- Modal：僅顯示「編號」與「內容」 -->
+        <div x-show="modalOpen" x-transition.opacity class="fc-modal__backdrop" role="dialog" aria-modal="true"
+            aria-labelledby="fcModalTitle" @click.self="closeModal()" @keydown.escape.prevent="closeModal()">
+            <div class="fc-modal__panel position-relative p-3" @click.stop tabindex="-1" x-ref="modalPanel">
+                <button type="button" class="btn btn-sm btn-outline-secondary fc-modal__close" @click="closeModal()"
+                    aria-label="關閉">✕</button>
+        
+                <div id="fcModalTitle" class="small text-secondary mb-2">
+                    <span x-text="(modalIndex + 1) + ' / ' + items.length"></span>
+                    <span class="fs-6 ms-1" x-text="modalItem?.content"></span>
+                </div>
             </div>
-        </div> -->
+        </div>
+
     </div>
 
     <div class="container-xxl">
@@ -1185,6 +1222,7 @@
             modalOpen: false,
             modalItem: null,
             modalIndex: 0,
+            _prevOverflow: '',
 
             init() {
                 // 只保留 show=true
@@ -1212,14 +1250,23 @@
             next() { this.current = (this.current + 1) % this.items.length; },
             prev() { this.current = (this.current + this.items.length - 1) % this.items.length; },
             go(i) { this.current = i; this.play(); },
+            // methods
             openModal(item, idx) {
                 this.modalItem = item;
                 this.modalIndex = idx;
                 this.modalOpen = true;
-                this.pause();
+                this.pause(); // 停止輪播
+                // 鎖背景卷軸
+                this._prevOverflow = document.body.style.overflow;
+                document.body.style.overflow = 'hidden';
+                // 將焦點移到面板（行動裝置也好操作）
+                this.$nextTick(() => this.$refs.modalPanel?.focus());
             },
             closeModal() {
                 this.modalOpen = false;
+                // 還原背景卷軸
+                document.body.style.overflow = this._prevOverflow || '';
+                // 關閉後恢復輪播（若需要）
                 this.play();
             }
         });
