@@ -90,7 +90,21 @@
 </head>
 
 <body x-data="quizApp()" x-init="init()" class="py-4">
-    <div class="alert alert-info text-center" x-show="easyFeatureOn">2024-05-30 新增簡單題號匯出功能</div>
+    <div x-data="featureCarousel(visibleFeatures)" x-show="items.length > 0"
+        class="alert alert-info text-center overflow-hidden">
+        <div class="d-flex" :style="{ transform: `translateX(-${current * 100}%)`, transition: 'transform 0.5s' }">
+            <template x-for="(f, i) in items" :key="i">
+                <div class="w-100 flex-shrink-0" x-text="f.date + ' ' + f.content"></div>
+            </template>
+        </div>
+        <div class="d-flex justify-content-center mt-1">
+            <template x-for="(f, i) in items" :key="'dot' + i">
+                <span class="mx-1 rounded-circle"
+                    :class="{ 'bg-secondary': current === i, 'bg-light': current !== i }"
+                    style="width:8px;height:8px;display:inline-block;"></span>
+            </template>
+        </div>
+    </div>
     <div class="container-xxl">
 
         <!-- 標題列 -->
@@ -210,6 +224,10 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="excludeEasy" x-model="excludeEasy">
                             <label class="form-check-label" for="excludeEasy">忽略已標「簡單」的題目</label>
+                        </div>
+                        <div class="form-check" x-show="easyFeatureOn">
+                            <input class="form-check-input" type="checkbox" id="excludeDevEasy" x-model="excludeDevEasy">
+                            <label class="form-check-label" for="excludeDevEasy">排除開發者標記簡單的題目</label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="showExpWrong" x-model="expandWrong">
@@ -683,6 +701,11 @@
                                     x-model="filter.onlyNotEasy">
                                 <label class="form-check-label" for="onlyNotEasy">只看已標非簡單</label>
                             </div>
+                            <div class="form-check" x-show="easyFeatureOn">
+                                <input class="form-check-input" type="checkbox" id="filterDevEasy"
+                                    x-model="filter.excludeDevEasy">
+                                <label class="form-check-label" for="filterDevEasy">排除開發者標記簡單</label>
+                            </div>
                             <input type="text" class="form-control form-control-sm" placeholder="搜尋題號"
                                 x-model="recordSearch" style="width:8rem;" />
                             <button class="btn btn-sm btn-outline-secondary" @click="refreshStatsIds()"><i
@@ -945,6 +968,16 @@
             return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
         };
 
+        const featureCarousel = (items) => ({
+            items,
+            current: 0,
+            init() {
+                if (this.items.length > 0) {
+                    setInterval(() => { this.current = (this.current + 1) % this.items.length; }, 1000);
+                }
+            }
+        });
+
         const BUG_STATUS = Object.freeze({
             UNRESOLVED: '未處理',
             IN_PROGRESS: '處理中',
@@ -1010,6 +1043,7 @@
                 numQuestions: 50,
                 shuffle: true,
                 excludeEasy: true,
+                excludeDevEasy: false,
                 expandWrong: true,
                 answers: {},            // qid -> Set(optionId)
                 resultMap: {},          // qid -> 'correct' | 'wrong'
@@ -1017,6 +1051,10 @@
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
                 easyFeatureOn: false,   // 啟用 easy.json 功能的開關
                 easyIds: new Set(),
+                featureList: [
+                    { date: '2024-05-30', content: '新增簡單題號匯出功能', show: false },
+                    { date: '2024-06-01', content: '第二項新功能', show: false }
+                ],
                 previewSet: [],
                 previewTitle: '',
                 showHelp: false,
@@ -1038,7 +1076,7 @@
 
                 // 紀錄（第二個 JSON）
                 stats: {},              // qid -> { attempts, wrong, correct, lastSelected:[], easy, unsure, lastAnsweredAt }
-                filter: { onlyWrong: true, onlyNotEasy: false },
+                filter: { onlyWrong: true, onlyNotEasy: false, excludeDevEasy: false },
                 recordSearch: '',
                 sortKey: 'id',
                 sortAsc: true,
@@ -1060,6 +1098,7 @@
                     });
                     if (this.filter.onlyWrong) rows = rows.filter(r => r.wrong > 0);
                     if (this.filter.onlyNotEasy) rows = rows.filter(r => !r.easy);
+                    if (this.filter.excludeDevEasy) rows = rows.filter(r => !this.easyIds.has(r.id));
                     if (this.recordSearch) rows = rows.filter(r => r.id.includes(this.recordSearch.trim()));
                     const asc = this.sortAsc ? 1 : -1;
                     rows.sort((a, b) => {
@@ -1079,9 +1118,10 @@
                 },
 
                 get overallStats() {
-                    const total = this.questions.length;
+                    const qs = this.excludeDevEasy ? this.questions.filter(q => !this.easyIds.has(q.id)) : this.questions;
+                    const total = qs.length;
                     let unanswered = 0, wrong = 0, correct = 0, easy = 0;
-                    for (const q of this.questions) {
+                    for (const q of qs) {
                         const s = this.stats[q.id] || this.defaultStat(q.id);
                         if ((s.attempts || 0) === 0) unanswered++;
                         wrong += s.wrong || 0;
@@ -1094,6 +1134,8 @@
                     const notEasy = total - easy;
                     return { total, unanswered, answered, wrong, correct, totalAttempts, accuracy, easy, notEasy };
                 },
+
+                get visibleFeatures() { return this.featureList.filter(f => f.show); },
 
                 async init() {
                     document.title = `出題系統 ${this.version}｜Alpine.js`;
@@ -1111,6 +1153,8 @@
                         this.syncBugsWithQuestions();
                     }
                     if (this.easyFeatureOn) {
+                        this.excludeDevEasy = true;
+                        this.filter.excludeDevEasy = true;
                         await this.loadEasyList();
                     }
                     this.updateScrollButtons();
@@ -1157,14 +1201,15 @@
                     try {
                         const res = await fetch('easy.json', { cache: 'no-store' });
                         if (res.ok) {
-                            const text = await res.text();
-                            const ids = text.split(',').map(s => s.trim()).filter(Boolean);
-                            this.easyIds = new Set(ids);
-                            for (const id of this.easyIds) {
-                                if (!this.stats[id]) this.stats[id] = this.defaultStat(id);
-                                this.stats[id].easy = true;
+                            const arr = await res.json();
+                            if (Array.isArray(arr)) {
+                                this.easyIds = new Set(arr.map(id => String(id)));
+                                for (const id of this.easyIds) {
+                                    if (!this.stats[id]) this.stats[id] = this.defaultStat(id);
+                                    this.stats[id].easy = true;
+                                }
+                                this.saveStatsToLS();
                             }
-                            this.saveStatsToLS();
                         }
                     } catch (err) { console.warn('載入 easy.json 失敗', err); }
                 },
@@ -1540,8 +1585,8 @@
                     this.summary = { total: 0, correct: 0, wrong: 0, unanswered: 0, wrongList: [] };
                     clearInterval(this.timer);
                     const all = this.questions.slice();
-                    // 過濾：排除已標簡單
-                    let pool = all.filter(q => !this.excludeEasy || !(this.stats[q.id]?.easy));
+                    // 過濾：排除已標簡單及開發者標示簡單
+                    let pool = all.filter(q => (!this.excludeDevEasy || !this.easyIds.has(q.id)) && (!this.excludeEasy || !(this.stats[q.id]?.easy)));
 
                     if (mode === 'wrongOnly') {
                         pool = pool.filter(q => (this.stats[q.id]?.wrong || 0) > 0);
