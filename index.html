@@ -1403,7 +1403,7 @@
                 easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
                 easyFeatureOn: true,   // 啟用 easy.json 功能的開關，改這裡
-                noteFeatureOn: false,  // 啟用筆記功能的開關，改這裡
+                noteFeatureOn: true,  // 啟用筆記功能的開關，改這裡
                 photoFeatureOn: true, // 啟用照片功能的開關，改這裡
                 noteHtml: '',
                 photoViewerOpen: false,
@@ -1420,10 +1420,10 @@
                 get currentPhoto() { return this.currentPhotoName ? `photo/${this.currentPhotoName}` : ''; },
                 easyIds: new Set(),
                 featureList: [
-                    { date: '2024-08-15', content: '新增筆記（右上角最左邊），gpt 寫的東東', show: false },
-                    { date: '2024-08-15', content: '新增照片（右上角），人家在 youtube 上複習的教材截圖', show: true },
-                    { date: '2024-08-15', content: '題目不會再新增了', show: true },
-                    { date: '2024-08-15', content: '新增開發者認為太簡單題排除功能（預設開啟）', show: true },
+                    { date: '2024-08-15', content: '新增筆記（右上角最左邊），gpt 寫的東東，根據照片內容新增中...', show: true },
+                    { date: '2024-08-15', content: '新增照片（右上角），人家在 youtube (課太久了截圖內容而已)上複習的教材截圖', show: true },
+                    { date: '2024-08-15', content: '題目不會再新增了，根本寫不完還很多重複的QQ', show: true },
+                    { date: '2024-08-15', content: '新增我認為太簡單題排除功能（預設開啟）', show: true },
                     { date: '2024-06-01', content: '第二項新功能', show: false },
                     { date: '2024-06-01', content: '第三項新功能', show: false }
                 ],// 改這裡

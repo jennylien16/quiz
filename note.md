@@ -9,6 +9,7 @@
 | **關聯規則 (Association Rule)**  | 從大量交易資料中找出項目間的關聯性，通常用於找出「X 發生時 Y 也可能發生」             | 關聯分析                                 | 購物籃分析（Market Basket Analysis）、產品推薦 |
 | **異常偵測 (Anomaly Detection)** | 找出與大部分資料分布差異很大的資料點；可用統計或機器學習方法                          | 異常/偵錯                                | 金融詐欺偵測、設備故障預警、網路入侵偵測       |
 
+---
 
 ### 支援向量機（Support Vector Machine, SVM）
 是一種**監督式學習演算法**，主要用於**分類**（Classification），也可以延伸用於**回歸**（Regression，稱為 SVR）。
@@ -43,6 +44,8 @@
 | Recall    | 召回率 / 靈敏度 | 真正的正類中，有多少被正確找出來     | 戰場上所有敵人中，有多少被打到（沒有漏掉）                          | 假陰性成本高                           | 適合不希望漏掉的情況，例如癌症篩檢、安全漏洞偵測               |
 | F1-score  | F1 分數         | Precision 與 Recall 的平衡綜合指標   | 既要命中率高（Precision），又要能打到大部分敵人（Recall）的綜合成績 | Precision 與 Recall 都重要、類別不平衡 | 適合需要同時兼顧精確率與召回率的任務，例如搜尋引擎、問答系統   |
 
+---
+
 | 面向                   | 分類型                                                                            | 常見演算法 / 模型                                                  | 常用評估方式                                                                                                                               | 常見應用                             |
 | ---------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | **監督式學習 (SL)**    | <span style="background-color:#CFE2FF">**分類 (Classification)**</span>           | - 決策樹 (Decision Tree)<br>- K 最近鄰 (KNN)<br>- 支援向量機 (SVM) | - 準確率 (Accuracy)：整體預測對的比例<br>- 精確率 (Precision)：預測為正類中，正確的比例<br>- 召回率 (Recall)：所有正類中，被正確找出的比例 | - 垃圾郵件判斷<br>- 身份識別         |
@@ -52,3 +55,21 @@
 | **強化學習 (RL)**      | <span style="background-color:#F8D7DA">**策略學習**</span>                        | - Q-learning                                                       | - 累積獎勵 (Cumulative Reward)：整體任務中累積的分數或獎勵                                                                                 | - AI 打遊戲（如 AlphaGo）            |
 |                        | <span style="background-color:#F8D7DA">**決策優化**</span>                        | - 深度強化學習 (DQN)                                               | - 策略收斂速度：多快找到最佳策略                                                                                                           | - 自動駕駛<br>- 機器人動作學習       |
 | **多用途演算法**       | <span style="background-color:#E2E3E5">可同時用於分類 / 回歸 / 分群</span>        | - 隨機森林 (RF)<br>- 神經網路 (ANN)<br>- 支援向量機 (SVM)          | 依不同任務選擇對應的評估方式                                                                                                               | - 醫療、金融、零售、工業等多領域應用 |
+
+---
+
+| 名稱                                                         | 英文縮寫 / 全名                    | 所屬類型                            | 簡單定義                                      | 生活化例子                               |
+| ------------------------------------------------------------ | ---------------------------------- | ----------------------------------- | --------------------------------------------- | ---------------------------------------- |
+| <span style="background-color:#CFE2FF">K 最近鄰</span>       | KNN (K-Nearest Neighbors)          | 監督式學習（分類 / 回歸）           | 判斷新資料時，看它最近的 K 個鄰居屬於哪一類   | 判斷水果種類，看它最像的 K 個水果是什麼  |
+| <span style="background-color:#FFE5B4">輪廓係數</span>       | Silhouette Score                   | 非監督式學習（分群評估）            | 衡量分群效果好壞，介於 -1 \~ 1                | 分桌吃飯，同桌人熟、不同桌差異大就是高分 |
+| <span style="background-color:#D1E7DD">主成分分析</span>     | PCA (Principal Component Analysis) | 非監督式學習（降維）                | 壓縮資料維度，保留主要資訊、去掉噪音          | 將 100 個特徵濃縮成 2\~3 個主要指標      |
+| <span style="background-color:#FFE5B4">聚類可視化分析</span> | Clustering Visualization           | 非監督式學習（分群結果分析）        | 將分群結果畫成圖表，方便理解                  | 用不同顏色顯示客戶分群分佈               |
+| <span style="background-color:#F8D7DA">Q-learning</span>     | Q-learning                         | 強化學習                            | 用嘗試錯誤學最佳動作，最大化累積獎勵          | 機器人學走路，走對加分、撞牆扣分         |
+| <span style="background-color:#F8D7DA">AlphaGo</span>        | AlphaGo                            | 強化學習（深度學習 + 蒙地卡羅搜索） | Google DeepMind 的圍棋 AI，自我對弈訓練       | 2016 年打敗世界冠軍李世乭                |
+| <span style="background-color:#F8D7DA">深度強化學習</span>   | DQN (Deep Q-Network)               | 強化學習                            | Q-learning + 深度神經網路，處理圖片等高維輸入 | AI 學玩 Atari 電玩，直接看畫面決定動作   |
+| <span style="background-color:#F8D7DA">策略收斂速度</span>   | Policy Convergence Speed           | 強化學習評估指標                    | 多快找到穩定有效的策略                        | 兩個 AI 學開車，比誰更快穩定不撞車       |
+| <span style="background-color:#E2E3E5">隨機森林</span>       | RF (Random Forest)                 | 監督式學習（分類 / 回歸）           | 多棵決策樹投票或取平均，避免過擬合            | 多位醫生診斷，採大多數意見               |
+| <span style="background-color:#E2E3E5">神經網路</span>       | ANN (Artificial Neural Network)    | 通用（分類 / 回歸 / 強化學習）      | 模仿人腦神經元連結的數學模型                  | 貓狗辨識、Siri 語音辨識、Google 翻譯     |
+
+---
+
