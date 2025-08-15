@@ -276,6 +276,9 @@
                 <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()" title="Bug 回報">
                     <i class="bi bi-bug" aria-hidden="true"></i>
                 </button>
+                <button class="btn btn-outline-secondary btn-sm" @click="openPhotoViewer()" title="相簿">
+                    <i class="bi bi-images" aria-hidden="true"></i>
+                </button>
                 <!-- <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()" title="回首頁">
                     <i class="bi bi-house" aria-hidden="true"></i>
                 </button> -->
@@ -1208,6 +1211,19 @@
         </div>
     </div>
 
+    <!-- Photo viewer -->
+    <div x-show="photoViewerOpen" x-transition.opacity class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex align-items-center justify-content-center" style="z-index:2000;" @click.self="closePhotoViewer()">
+        <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center" tabindex="0" x-ref="photoViewerPanel" @keydown.left.prevent="prevPhoto()" @keydown.right.prevent="nextPhoto()" @touchstart="photoTouchStartX=$event.touches[0].clientX" @touchend="photoHandleSwipe($event)">
+            <img :src="currentPhoto" class="img-fluid" style="max-height:90vh; max-width:90vw;" x-show="currentPhoto">
+            <div class="text-white" x-show="!currentPhoto">無照片</div>
+            <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-2" @click.stop="prevPhoto()"><i class="bi bi-chevron-left"></i></button>
+            <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-2" @click.stop="nextPhoto()"><i class="bi bi-chevron-right"></i></button>
+            <button class="btn btn-light position-absolute top-0 end-0 m-2" @click.stop="closePhotoViewer()"><i class="bi bi-x"></i></button>
+            <button class="btn btn-light position-absolute bottom-0 end-0 m-3" @click.stop="toggleFavorite()" :class="{ 'text-danger': isFavorite(currentPhotoName) }"><i :class="isFavorite(currentPhotoName) ? 'bi bi-heart-fill' : 'bi bi-heart'"></i></button>
+            <button class="btn btn-light position-absolute bottom-0 start-0 m-3" @click.stop="toggleShowFav()" :class="{ 'text-danger': showFavOnly }"><i class="bi bi-filter"></i> <i class="bi" :class="showFavOnly ? 'bi-heart-fill' : 'bi-heart'"></i></button>
+        </div>
+    </div>
+
     <script>
         // —— 工具函數 ——
         const md = (text) => window.marked ? window.marked.parse(text) : text;
@@ -1358,6 +1374,18 @@
                 easyFeatureOn: true,   // 啟用 easy.json 功能的開關，改這裡
                 noteFeatureOn: false,  // 啟用筆記功能的開關，改這裡
                 noteHtml: '',
+                photoViewerOpen: false,
+                photoList: [],
+                photoIndex: 0,
+                photoFavorites: JSON.parse(localStorage.getItem('photoFavorites') || '[]'),
+                showFavOnly: false,
+                photoTouchStartX: 0,
+                get filteredPhotos() {
+                    const fav = new Set(this.photoFavorites);
+                    return this.showFavOnly ? this.photoList.filter(p => fav.has(p)) : this.photoList;
+                },
+                get currentPhotoName() { return this.filteredPhotos[this.photoIndex]; },
+                get currentPhoto() { return this.currentPhotoName ? `photo/${this.currentPhotoName}` : ''; },
                 easyIds: new Set(),
                 featureList: [
                     { date: '2024-08-15', content: '題目不會再新增了', show: true },
@@ -1465,6 +1493,39 @@
                 },
 
                 get visibleFeatures() { return this.featureList.filter(f => f.show); },
+
+                async openPhotoViewer() {
+                    if (this.photoList.length === 0) {
+                        try {
+                            const res = await fetch('photo/photos.json');
+                            if (res.ok) { this.photoList = await res.json(); }
+                        } catch (err) { console.warn('載入照片清單失敗', err); }
+                    }
+                    this.showFavOnly = false;
+                    this.photoIndex = 0;
+                    this.photoViewerOpen = true;
+                    this.$nextTick(() => this.$refs.photoViewerPanel?.focus());
+                },
+                closePhotoViewer() { this.photoViewerOpen = false; },
+                nextPhoto() { if (this.filteredPhotos.length) { this.photoIndex = (this.photoIndex + 1) % this.filteredPhotos.length; } },
+                prevPhoto() { if (this.filteredPhotos.length) { this.photoIndex = (this.photoIndex + this.filteredPhotos.length - 1) % this.filteredPhotos.length; } },
+                toggleFavorite() {
+                    const name = this.currentPhotoName;
+                    if (!name) return;
+                    const set = new Set(this.photoFavorites);
+                    if (set.has(name)) set.delete(name); else set.add(name);
+                    this.photoFavorites = Array.from(set);
+                    localStorage.setItem('photoFavorites', JSON.stringify(this.photoFavorites));
+                },
+                isFavorite(name) { return this.photoFavorites.includes(name); },
+                toggleShowFav() {
+                    this.showFavOnly = !this.showFavOnly;
+                    this.photoIndex = 0;
+                },
+                photoHandleSwipe(e) {
+                    const dx = e.changedTouches[0].clientX - this.photoTouchStartX;
+                    if (Math.abs(dx) > 40) (dx < 0 ? this.nextPhoto() : this.prevPhoto());
+                },
 
                 async init() {
                     document.title = `出題系統 ${this.version}｜Alpine.js`;
