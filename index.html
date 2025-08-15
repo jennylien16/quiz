@@ -186,7 +186,7 @@
 
             <div class="fc-track" :style="{ transform: `translateX(-${current * 100}%)` }">
                 <template x-for="(f, i) in items" :key="i">
-                    <div class="fc-item px-5">
+                    <div class="fc-item px-5 pointer" @click="openModal(f, i)">
                         <span class="badge text-bg-light border fw-normal"
                             x-text="(current + 1) + ' / ' + items.length"></span>
 
@@ -207,6 +207,16 @@
                 <button class="fc-dot" :class="current === i ? 'active' : 'inactive'" @click="go(i)"
                     :aria-label="`第 ${i+1} 則`"></button>
             </template>
+        </div>
+
+        <!-- 簡易 Modal -->
+        <div x-show="modalOpen" @click.self="closeModal()"
+            class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+            style="background: rgba(0, 0, 0, .5); z-index: 2000;" x-transition>
+            <div class="bg-white rounded p-3 mx-3 text-start">
+                <div class="mb-2"><span x-text="(modalIndex + 1) + ' / ' + items.length"></span></div>
+                <div x-text="modalItem?.content"></div>
+            </div>
         </div>
     </div>
 
@@ -1093,6 +1103,9 @@
             current: 0,
             timer: null,
             interval: opts.interval ?? 1000, // 預設每秒換一則
+            modalOpen: false,
+            modalItem: null,
+            modalIndex: 0,
 
             init() {
                 // 只保留 show=true
@@ -1119,7 +1132,17 @@
             },
             next() { this.current = (this.current + 1) % this.items.length; },
             prev() { this.current = (this.current + this.items.length - 1) % this.items.length; },
-            go(i) { this.current = i; this.play(); }
+            go(i) { this.current = i; this.play(); },
+            openModal(item, idx) {
+                this.modalItem = item;
+                this.modalIndex = idx;
+                this.modalOpen = true;
+                this.pause();
+            },
+            closeModal() {
+                this.modalOpen = false;
+                this.play();
+            }
         });
 
         const BUG_STATUS = Object.freeze({
