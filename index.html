@@ -109,7 +109,7 @@
 
         <!-- 標題列 -->
         <div class="d-flex align-items-center justify-content-between mb-3">
-            <h1 class="h4 mb-0">出題系統 <span class="small text-secondary" x-text="version"></span> <span
+            <h1 class="h4 mb-0 pointer" @click="exitQuiz()">出題系統 <span class="small text-secondary" x-text="version"></span> <span
                      class="small text-secondary"><!--｜Alpine.js --></span></h1>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-secondary btn-sm" @click="openRecordPanel()" title="紀錄管理">
@@ -973,7 +973,7 @@
             current: 0,
             init() {
                 if (this.items.length > 0) {
-                    setInterval(() => { this.current = (this.current + 1) % this.items.length; }, 1000);
+                    setInterval(() => { this.current = (this.current + 1) % this.items.length; }, 4000);
                 }
             }
         });
@@ -1206,7 +1206,6 @@
                                 this.easyIds = new Set(arr.map(id => String(id)));
                                 for (const id of this.easyIds) {
                                     if (!this.stats[id]) this.stats[id] = this.defaultStat(id);
-                                    this.stats[id].easy = true;
                                 }
                                 this.saveStatsToLS();
                             }
