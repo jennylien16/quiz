@@ -347,7 +347,7 @@
                             <button class="btn btn-primary" :disabled="questions.length===0"
                                 @click="startQuiz('normal')"><i class="bi bi-play-circle" aria-hidden="true"></i>
                                 開始測驗</button>
-                            <button class="btn btn-outline-warning" :disabled="questions.length===0"
+                            <button class="btn btn-outline-warning" :disabled="questions.length===0" @show="overallStats.unanswered > 0"
                                 @click="startQuiz('unansweredOnly')"><i class="bi bi-patch-question"
                                     aria-hidden="true"></i> 只出未作答題</button>
                             <button class="btn btn-outline-primary" :disabled="questions.length===0"
@@ -357,7 +357,7 @@
                                 @click="startQuiz('wrongOnly')"><i class="bi bi-exclamation-octagon"
                                     aria-hidden="true"></i>
                                 只出錯題</button>
-                            <button class="btn btn-outline-success"
+                            <button class="btn btn-outline-success" @show="overallStats.notEasy > 0"
                                 :disabled="questions.length===0 || noWrongNotEasyCount===0"
                                 @click="startQuiz('noWrongNotEasy')"
                                 :title="`共有${noWrongNotEasyCount}題`"><i class="bi bi-check-circle"
