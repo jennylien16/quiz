@@ -264,6 +264,9 @@
             <h1 class="h4 mb-0 pointer" @click="exitQuiz()">出題系統 <span class="small text-secondary"
                     x-text="version"></span> <span class="small text-secondary"><!--｜Alpine.js --></span></h1>
             <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" x-show="noteFeatureOn" @click="openNote()" title="筆記">
+                    <i class="bi bi-journal-richtext" aria-hidden="true"></i>
+                </button>
                 <button class="btn btn-outline-secondary btn-sm" @click="openQbankPanel()" title="題庫管理">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
                 </button>
@@ -306,10 +309,17 @@
             <div class="card-body">
                 <h2 class="h6">新功能！</h2>
                 <div class="row text-center mt-2 justify-content-center g-3">
-                    
+
                 </div>
             </div>
         </div> -->
+
+        <!-- 筆記頁面 -->
+        <div class="card card-soft mb-4" x-show="view==='note'">
+            <div class="card-body">
+                <div x-html="noteHtml"></div>
+            </div>
+        </div>
 
         <!-- 統計摘要 -->
         <div class="card card-soft mb-4" x-show="view==='home'">
@@ -1328,7 +1338,7 @@
         function quizApp() {
             return {
                 // 狀態
-                view: 'home',            // home | quiz | summary | preview
+                view: 'home',            // home | quiz | summary | preview | note
                 prevView: 'home',
                 pageMode: localStorage.getItem('pageMode') || 'all',         // one | all
                 mode: 'normal',          // normal | review | wrongOnly | unansweredOnly | noWrongNotEasy
@@ -1346,6 +1356,8 @@
                 easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
                 easyFeatureOn: true,   // 啟用 easy.json 功能的開關，改這裡
+                noteFeatureOn: false,  // 啟用筆記功能的開關
+                noteHtml: '',
                 easyIds: new Set(),
                 featureList: [
                     { date: '2024-08-15', content: '題目不會再新增了', show: true },
@@ -1832,6 +1844,15 @@
                         } catch (err) { alert('匯入失敗：' + err.message); }
                     });
                 },*/
+                openNote() {
+                    fetch('note.md')
+                        .then(r => r.text())
+                        .then(md => {
+                            this.noteHtml = marked.parse(md);
+                            this.view = 'note';
+                        })
+                        .catch(() => alert('筆記載入失敗'));
+                },
                 openQbankPanel() {
                     const panel = document.getElementById('qbankPanel');
                     if (panel) {
