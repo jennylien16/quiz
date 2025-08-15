@@ -838,6 +838,10 @@
                         </template>
                     </template>
                     <template x-if="previewMode==='single'">
+                        <div class="d-flex justify-content-between mb-3">
+                            <button class="btn btn-outline-secondary" @click="previewIndex--" :disabled="previewIndex<=0">上一題</button>
+                            <button class="btn btn-outline-secondary" @click="previewIndex++" :disabled="previewIndex>=previewSet.length-1">下一題</button>
+                        </div>
                         <template x-if="currentPreview">
                             <div class="border rounded-4 p-3 p-md-4 mb-3">
                                 <div class="d-flex align-items-start justify-content-between">
@@ -1136,6 +1140,9 @@
                             <option value="multi">多題</option>
                         </select>
                     </div>
+                    <div class="mt-3 text-end">
+                        題庫：<span class="fw-semibold" x-text="filteredQuestionCount"></span>題
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" @click="enterQuestionBank()">進入</button>
@@ -1356,6 +1363,13 @@
                 get currentPreview() { return this.previewSet[this.previewIndex]; },
                 questionModal: null,
                 questionFilter: { excludeDevEasy: true, excludeUserEasy: true, excludeCorrect: false, display: 'multi' },
+                get filteredQuestionCount() {
+                    let arr = this.questions.slice();
+                    if (this.questionFilter.excludeDevEasy) arr = arr.filter(q => !this.easyIds.has(q.id));
+                    if (this.questionFilter.excludeUserEasy) arr = arr.filter(q => !(this.stats[q.id]?.easy));
+                    if (this.questionFilter.excludeCorrect) arr = arr.filter(q => !(this.stats[q.id]?.correct));
+                    return arr.length;
+                },
                 showHelp: false,
                 debugMode: false,
                 version: 'v1.0',
