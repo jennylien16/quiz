@@ -121,9 +121,9 @@
                 <button class="btn btn-outline-secondary btn-sm" @click="openBugPanel()" title="Bug 回報">
                     <i class="bi bi-bug" aria-hidden="true"></i>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()" title="回首頁">
+                <!-- <button class="btn btn-outline-secondary btn-sm" @click="exitQuiz()" title="回首頁">
                     <i class="bi bi-house" aria-hidden="true"></i>
-                </button>
+                </button> -->
                 <button class="btn btn-outline-secondary btn-sm" @click="showHelp = !showHelp" title="說明">
                     <i class="bi bi-question-circle" aria-hidden="true"></i>
                 </button>
@@ -271,7 +271,7 @@
                             <input type="file" class="form-control" accept=".json,application/json"
                                 @change="loadQuestionsFromFile($event)" />
                             <div class="small text-secondary mt-2" x-show="questions.length===0">
-                                尚未載入題庫，可先載入下方「範例題庫」試用。
+                                尚未載入題庫<!-- ，可先載入下方「範例題庫」試用。 -->
                             </div>
                             <div class="d-flex flex-wrap gap-2 mt-2">
                                 <!--
@@ -279,7 +279,7 @@
                                     <i class="bi bi-cloud-arrow-down"></i> 雲端硬碟
                                 </button>
                                 -->
-                                <!-- <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
+                                 <!-- <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
                                     <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
                                 </button> -->
                                 <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()">
@@ -1049,12 +1049,12 @@
                 resultMap: {},          // qid -> 'correct' | 'wrong'
                 easyMarkAll: {},        // 一頁所有題模式下的簡單勾選
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
-                easyFeatureOn: false,   // 啟用 easy.json 功能的開關
+                easyFeatureOn: false,   // 啟用 easy.json 功能的開關，改這裡
                 easyIds: new Set(),
                 featureList: [
                     { date: '2024-05-30', content: '新增簡單題號匯出功能', show: false },
                     { date: '2024-06-01', content: '第二項新功能', show: false }
-                ],
+                ],// 改這裡
                 previewSet: [],
                 previewTitle: '',
                 showHelp: false,
