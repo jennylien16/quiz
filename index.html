@@ -97,12 +97,21 @@
                 <div class="w-100 flex-shrink-0" x-text="f.date + ' ' + f.content"></div>
             </template>
         </div>
-        <div class="d-flex justify-content-center mt-1">
+        <!-- <div class="d-flex justify-content-center mt-1">
             <template x-for="(f, i) in items" :key="'dot' + i">
                 <span class="mx-1 rounded-circle"
                     :class="{ 'bg-secondary': current === i, 'bg-light': current !== i }"
                     style="width:8px;height:8px;display:inline-block;"></span>
             </template>
+        </div> -->
+        <div class="d-flex justify-content-center align-items-center gap-3 mt-1">
+            <button class="btn btn-outline-secondary" @click="current = (current + items.length - 1) % items.length">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span x-text="(current + 1) + '/' + items.length"></span>
+            <button class="btn btn-outline-secondary" @click="current = (current + 1) % items.length">
+                <i class="bi bi-chevron-right"></i>
+            </button>
         </div>
     </div>
     <div class="container-xxl">
