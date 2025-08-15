@@ -89,42 +89,84 @@
 
         /* 輪播容器 */
         .feature-carousel {
-        --fc-nav-size: 32px; /* 箭頭大小 */
-        --fc-gutter: 40px;   /* 每張內容左右安全邊界 */
-        position: relative;
+            --fc-nav-size: 32px;
+            /* 箭頭大小 */
+            --fc-gutter: 40px;
+            /* 每張內容左右安全邊界 */
+            position: relative;
         }
 
         /* Viewport 只負責裁切，不能加 padding */
         .fc-viewport {
-        position: relative;
-        overflow: hidden;
+            position: relative;
+            overflow: hidden;
         }
 
         /* 軌道與每張 */
-        .fc-track { display: flex; transition: transform 600ms ease-in-out !important; }
-        .fc-item  {
-        flex: 0 0 100%; min-width: 0;
-        display: flex; align-items: center; gap: .5rem;
-        padding: .25rem var(--fc-gutter); /* ← 改在這裡留內距，就不會漏 */
+        .fc-track {
+            display: flex;
+            transition: transform 600ms ease-in-out !important;
+        }
+
+        .fc-item {
+            flex: 0 0 100%;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .25rem var(--fc-gutter);
+            /* ← 改在這裡留內距，就不會漏 */
         }
 
         /* 箭頭置中 */
         .fc-nav {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        width: var(--fc-nav-size); height: var(--fc-nav-size);
-        display: grid; place-items: center; padding: 0; z-index: 2;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: var(--fc-nav-size);
+            height: var(--fc-nav-size);
+            display: grid;
+            place-items: center;
+            padding: 0;
+            z-index: 2;
         }
-        .fc-prev { left: 8px; }
-        .fc-next { right: 8px; }
+
+        .fc-prev {
+            left: 8px;
+        }
+
+        .fc-next {
+            right: 8px;
+        }
 
         /* 圓點 */
-        .fc-dot { display:inline-block; width:10px; aspect-ratio:1/1; border-radius:50%; border:1px solid rgba(0,0,0,.15); }
-        .fc-dot.active { background: rgba(0,0,0,.5); }
-        .fc-dot.inactive { background: rgba(0,0,0,.08); }
+        .fc-dot {
+            display: inline-block;
+            width: 10px;
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, .15);
+        }
+
+        .fc-dot.active {
+            background: rgba(0, 0, 0, .5);
+        }
+
+        .fc-dot.inactive {
+            background: rgba(0, 0, 0, .08);
+        }
 
         /* 文字輔助 */
-        .clamp-1 { display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
-        .date-nowrap { white-space: nowrap; }
+        .clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .date-nowrap {
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -133,7 +175,7 @@
     <div x-data="featureCarousel(featureList, { interval: 4000 })" x-init="init()" x-show="items.length > 0"
         class="feature-carousel alert alert-info text-center" @mouseenter="pause()" @mouseleave="play()"
         @keydown.left.prevent="prev()" @keydown.right.prevent="next()" tabindex="0">
-    
+
         <div class="fc-viewport">
             <button class="fc-nav fc-prev btn btn-sm btn-outline-secondary" @click="prev()" aria-label="上一則">
                 <i class="bi bi-chevron-left"></i>
@@ -141,12 +183,13 @@
             <button class="fc-nav fc-next btn btn-sm btn-outline-secondary" @click="next()" aria-label="下一則">
                 <i class="bi bi-chevron-right"></i>
             </button>
-        
+
             <div class="fc-track" :style="{ transform: `translateX(-${current * 100}%)` }">
                 <template x-for="(f, i) in items" :key="i">
                     <div class="fc-item px-5">
-                        <span class="badge text-bg-light border fw-normal" x-text="(current + 1) + ' / ' + items.length"></span>
-        
+                        <span class="badge text-bg-light border fw-normal"
+                            x-text="(current + 1) + ' / ' + items.length"></span>
+
                         <span class="fw-semibold clamp-1" x-text="f.content" :title="f.content"></span>
 
                         <span class="text-secondary small ms-auto date-nowrap">
@@ -157,7 +200,7 @@
                 </template>
             </div>
         </div>
-        
+
         <!-- 底下圓點 -->
         <div class="d-flex justify-content-center gap-2 mt-1">
             <template x-for="(f, i) in items" :key="'dot' + i">
@@ -171,8 +214,8 @@
 
         <!-- 標題列 -->
         <div class="d-flex align-items-center justify-content-between mb-3">
-            <h1 class="h4 mb-0 pointer" @click="exitQuiz()">出題系統 <span class="small text-secondary" x-text="version"></span> <span
-                     class="small text-secondary"><!--｜Alpine.js --></span></h1>
+            <h1 class="h4 mb-0 pointer" @click="exitQuiz()">出題系統 <span class="small text-secondary"
+                    x-text="version"></span> <span class="small text-secondary"><!--｜Alpine.js --></span></h1>
             <div class="d-flex gap-2">
                 <button class="btn btn-outline-secondary btn-sm" @click="openQbankPanel()" title="題庫管理">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
@@ -197,7 +240,8 @@
 
         <!-- 使用說明 -->
         <div class="alert alert-info py-3 position-relative" x-show="showHelp" x-transition>
-            <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="showHelp=false" title="關閉說明"><i class="bi bi-x"></i></button>
+            <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="showHelp=false"
+                title="關閉說明"><i class="bi bi-x"></i></button>
             <div class="fw-bold mb-1">快速使用：</div>
             <ol class="mb-2">
                 <li>用「載入題庫」選擇 <span class="mono">question.json</span>（題庫格式見下方備註）。</li>
@@ -232,7 +276,8 @@
                     <div class="col-6 col-md-3">
                         <div class="small-muted">未作答 | 未標簡單</div>
                         <div class="h5">
-                            <span class="text-warning" x-text="overallStats.unanswered"></span> | <span class="text-info" x-text="overallStats.notEasy"></span>
+                            <span class="text-warning" x-text="overallStats.unanswered"></span> | <span
+                                class="text-info" x-text="overallStats.notEasy"></span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
@@ -256,8 +301,8 @@
                 <div class="row g-3 align-items-end mb-4">
                     <div class="col-12 col-md-3">
                         <label class="form-label">出題數</label>
-                        <span class="small text-secondary mt-1">（題庫目前：<strong x-text="questions.length"></strong>
-                            題）</span>
+                        <!-- <span class="small text-secondary mt-1">（題庫目前：<strong x-text="questions.length"></strong>
+                            題）</span> -->
                         <div class="input-group">
                             <input type="number" class="form-control" min="1" :max="questions.length||1"
                                 x-model.number="numQuestions" />
@@ -285,10 +330,11 @@
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="excludeEasy" x-model="excludeEasy">
-                            <label class="form-check-label" for="excludeEasy">忽略已標「簡單」的題目</label>
+                            <label class="form-check-label" for="excludeEasy">忽略<!-- 已標「 -->簡單<!-- 」的題目 --></label>
                         </div>
                         <div class="form-check" x-show="easyFeatureOn">
-                            <input class="form-check-input" type="checkbox" id="excludeDevEasy" x-model="excludeDevEasy">
+                            <input class="form-check-input" type="checkbox" id="excludeDevEasy"
+                                x-model="excludeDevEasy">
                             <label class="form-check-label" for="excludeDevEasy">排除開發者標記簡單的題目</label>
                         </div>
                         <div class="form-check">
@@ -302,8 +348,8 @@
                                 @click="startQuiz('normal')"><i class="bi bi-play-circle" aria-hidden="true"></i>
                                 開始測驗</button>
                             <button class="btn btn-outline-warning" :disabled="questions.length===0"
-                                    @click="startQuiz('unansweredOnly')"><i class="bi bi-patch-question"
-                                        aria-hidden="true"></i> 只出未作答題</button>
+                                @click="startQuiz('unansweredOnly')"><i class="bi bi-patch-question"
+                                    aria-hidden="true"></i> 只出未作答題</button>
                             <button class="btn btn-outline-primary" :disabled="questions.length===0"
                                 @click="startQuiz('review')"><i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                                 錯題複習（優先）</button>
@@ -314,7 +360,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <hr class="my-4" />
                 <!-- 開關折疊的按鈕（右上角已有功能，先隱藏） -->
                 <!--
@@ -326,7 +372,8 @@
 
                 <!-- 可折疊的內容 -->
                 <div class="collapse position-relative" id="qbankPanel">
-                    <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2" @click="openQbankPanel()" title="關閉題庫管理"><i class="bi bi-x"></i></button>
+                    <button class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 m-2"
+                        @click="openQbankPanel()" title="關閉題庫管理"><i class="bi bi-x"></i></button>
                     <div class="row g-3">
                         <div class="col-12 col-lg-6">
                             <div class="mb-2 fw-semibold">載入題庫（question.json）</div>
@@ -341,7 +388,7 @@
                                     <i class="bi bi-cloud-arrow-down"></i> 雲端硬碟
                                 </button>
                                 -->
-                                 <!-- <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
+                                <!-- <button class="btn btn-sm btn-outline-primary" @click="loadSample()">
                                     <i class="bi bi-lightning-charge" aria-hidden="true"></i> 載入範例
                                 </button> -->
                                 <button class="btn btn-sm btn-outline-secondary" @click="loadProjectQuestions()">
@@ -395,10 +442,10 @@
                                 x-text="quizSet.length ? currentIndex + 1 : 0"></strong>/<span
                                 x-text="quizSet.length"></span> ｜ <!-- 時間：--><strong x-text="timeText"></strong></div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused"
-                                @click="pauseTimer()" title="暫停"><i class="bi bi-pause"></i><!-- 暫停 --></button>
-                            <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused"
-                                @click="resumeTimer()" title="繼續"><i class="bi bi-play"></i><!-- 繼續 --></button>
+                            <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"
+                                title="暫停"><i class="bi bi-pause"></i><!-- 暫停 --></button>
+                            <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"
+                                title="繼續"><i class="bi bi-play"></i><!-- 繼續 --></button>
                             <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()" title="回到首頁"><i
                                     class="bi bi-house"></i></button>
                         </div>
@@ -509,10 +556,10 @@
                         <div class="small-muted"><!-- 模式：--><span x-text="modeLabel"></span> ｜ <!-- 題數：--><strong
                                 x-text="quizSet.length"></strong> ｜ <!-- 時間：--><strong x-text="timeText"></strong></div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused"
-                                @click="pauseTimer()" title="暫停"><i class="bi bi-pause"></i><!-- 暫停 --></button>
-                            <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused"
-                                @click="resumeTimer()" title="繼續"><i class="bi bi-play"></i><!-- 繼續 --></button>
+                            <button class="btn btn-sm btn-outline-secondary" x-show="!timerPaused" @click="pauseTimer()"
+                                title="暫停"><i class="bi bi-pause"></i><!-- 暫停 --></button>
+                            <button class="btn btn-sm btn-outline-secondary" x-show="timerPaused" @click="resumeTimer()"
+                                title="繼續"><i class="bi bi-play"></i><!-- 繼續 --></button>
                             <button class="btn btn-sm btn-outline-secondary" @click="exitQuiz()" title="回到首頁"><i
                                     class="bi bi-house"></i> </button>
                         </div>
@@ -612,10 +659,12 @@
                         <button class="btn btn-outline-secondary" @click="exitQuiz()"><i class="bi bi-house"></i>
                             回首頁</button>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" @click="submitAll()" x-show="!showScore"><i class="bi bi-check2-circle"></i>
+                            <button class="btn btn-primary" @click="submitAll()" x-show="!showScore"><i
+                                    class="bi bi-check2-circle"></i>
                                 批改全部</button>
                             <button class="btn btn-success" @click="finishAndSummary()"
-                                x-show="!showScore && Object.keys(resultMap).length>0"><i class="bi bi-flag"></i> 結束並看成績</button>
+                                x-show="!showScore && Object.keys(resultMap).length>0"><i class="bi bi-flag"></i>
+                                結束並看成績</button>
                             <button class="btn btn-outline-secondary" x-show="showScore" @click="returnToSummary()"><i
                                     class="bi bi-card-list"></i> 回本次成績</button>
                         </div>
@@ -778,10 +827,10 @@
                                     class="bi bi-journal-text"></i> 題庫+詳解</button>
                             <button class="btn btn-sm btn-outline-danger" @click="showWrongWithExp()"><i
                                     class="bi bi-x-circle"></i> 錯題+詳解</button>
-                            <button class="btn btn-sm btn-outline-success" x-show="easyFeatureOn" @click="exportEasyIds()"><i
-                                    class="bi bi-download"></i> 匯出簡單題號</button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="openRecordPanel()" title="關閉紀錄管理"><i
-                                    class="bi bi-x"></i> </button>
+                            <button class="btn btn-sm btn-outline-success" x-show="easyFeatureOn"
+                                @click="exportEasyIds()"><i class="bi bi-download"></i> 匯出簡單題號</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="openRecordPanel()"
+                                title="關閉紀錄管理"><i class="bi bi-x"></i> </button>
                         </div>
                     </div>
                     <div class="table-responsive mt-3" style="max-height: 60vh; overflow-y: auto;">
@@ -872,8 +921,8 @@
                                 title="可以把有問題的題號一鍵複製傳給我哈哈"><i class="bi bi-clipboard"></i> 題號</button>
                             <button class="btn btn-sm btn-outline-danger" @click="clearAllBugs()" title="清空全部"><i
                                     class="bi bi-trash3"></i></button>
-                            <button class="btn btn-sm btn-outline-secondary" @click="openBugPanel()" title="關閉 Bug 回報區"><i
-                                    class="bi bi-x"></i></button>
+                            <button class="btn btn-sm btn-outline-secondary" @click="openBugPanel()"
+                                title="關閉 Bug 回報區"><i class="bi bi-x"></i></button>
                         </div>
                     </div>
 
@@ -924,15 +973,18 @@
                                         <td>
                                             <div x-data="{ editing:false, val:'' }">
                                                 <!-- 顯示模式 -->
-                                                <span x-show="!editing" @click="val = (b.status ?? '').toString().trim(); editing = true"
+                                                <span x-show="!editing"
+                                                    @click="val = (b.status ?? '').toString().trim(); editing = true"
                                                     class="cursor-pointer">
                                                     <span x-text="(b.status ?? '').toString().trim() || '-'"></span>
                                                     <i class="bi bi-caret-down-fill ms-1"></i>
                                                 </span>
-                                        
+
                                                 <!-- 編輯模式 -->
-                                                <select x-show="editing" class="form-select form-select-sm" x-model="val"
-                                                    @change="b.status = val; saveBugsToLS(); editing = false" @blur="editing = false">
+                                                <select x-show="editing" class="form-select form-select-sm"
+                                                    x-model="val"
+                                                    @change="b.status = val; saveBugsToLS(); editing = false"
+                                                    @blur="editing = false">
                                                     <template x-for="s in bugStatusOptions" :key="s">
                                                         <option :value="s" x-text="s"></option>
                                                     </template>
@@ -1005,10 +1057,10 @@
 
     <div class="position-fixed" style="right:1rem; bottom:1rem; z-index:1000;">
         <div class="d-flex flex-column gap-2">
-            <button x-show="showTopBtn" class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToTop()" title="回到頂端"><i
-                    class="bi bi-arrow-up"></i></button>
-            <button x-show="showBottomBtn" class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToBottom()" title="移到底部"><i
-                    class="bi bi-arrow-down"></i></button>
+            <button x-show="showTopBtn" class="btn btn-outline-secondary btn-sm rounded-circle" @click="scrollToTop()"
+                title="回到頂端"><i class="bi bi-arrow-up"></i></button>
+            <button x-show="showBottomBtn" class="btn btn-outline-secondary btn-sm rounded-circle"
+                @click="scrollToBottom()" title="移到底部"><i class="bi bi-arrow-down"></i></button>
         </div>
     </div>
 
@@ -1031,39 +1083,39 @@
         };
 
         const featureCarousel = (items, opts = {}) => ({
-                raw: Array.isArray(items) ? items : [],
-                items: [],
-                current: 0,
-                timer: null,
-                interval: opts.interval ?? 1000, // 預設每秒換一則
+            raw: Array.isArray(items) ? items : [],
+            items: [],
+            current: 0,
+            timer: null,
+            interval: opts.interval ?? 1000, // 預設每秒換一則
 
-                init() {
-                    // 只保留 show=true
-                    this.items = this.raw.filter(x => x?.show);
-                    if (this.items.length > 1) this.play();
+            init() {
+                // 只保留 show=true
+                this.items = this.raw.filter(x => x?.show);
+                if (this.items.length > 1) this.play();
 
-                    // 觸控滑動（手機可左右滑）
-                    let sx = 0;
-                    this.$el.addEventListener('touchstart', e => { sx = e.changedTouches[0].clientX; }, { passive: true });
-                    this.$el.addEventListener('touchend', e => {
-                        const dx = e.changedTouches[0].clientX - sx;
-                        if (Math.abs(dx) > 40) (dx < 0 ? this.next() : this.prev());
-                    }, { passive: true });
-                },
+                // 觸控滑動（手機可左右滑）
+                let sx = 0;
+                this.$el.addEventListener('touchstart', e => { sx = e.changedTouches[0].clientX; }, { passive: true });
+                this.$el.addEventListener('touchend', e => {
+                    const dx = e.changedTouches[0].clientX - sx;
+                    if (Math.abs(dx) > 40) (dx < 0 ? this.next() : this.prev());
+                }, { passive: true });
+            },
 
-                play() {
-                    this.pause();
-                    if (this.items.length > 1) {
-                        this.timer = setInterval(() => this.next(), this.interval);
-                    }
-                },
-                pause() {
-                    if (this.timer) { clearInterval(this.timer); this.timer = null; }
-                },
-                next() { this.current = (this.current + 1) % this.items.length; },
-                prev() { this.current = (this.current + this.items.length - 1) % this.items.length; },
-                go(i) { this.current = i; this.play(); }
-            });
+            play() {
+                this.pause();
+                if (this.items.length > 1) {
+                    this.timer = setInterval(() => this.next(), this.interval);
+                }
+            },
+            pause() {
+                if (this.timer) { clearInterval(this.timer); this.timer = null; }
+            },
+            next() { this.current = (this.current + 1) % this.items.length; },
+            prev() { this.current = (this.current + this.items.length - 1) % this.items.length; },
+            go(i) { this.current = i; this.play(); }
+        });
 
         const BUG_STATUS = Object.freeze({
             UNRESOLVED: '未處理',
