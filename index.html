@@ -196,6 +196,17 @@
         .fc-modal__panel { width: 94vw; max-height: 86vh; }
         }
 
+        .note-content table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .note-content th,
+        .note-content td {
+            border: 1px solid #dee2e6;
+            padding: .5rem;
+        }
+
     </style>
 </head>
 
@@ -321,7 +332,7 @@
         <!-- 筆記頁面 -->
         <div class="card card-soft mb-4" x-show="view==='note'">
             <div class="card-body">
-                <div x-html="noteHtml"></div>
+                <div class="note-content" x-html="noteHtml"></div>
             </div>
         </div>
 
