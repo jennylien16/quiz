@@ -13,6 +13,7 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        [x-cloak] { display: none !important; }
         :root {
             --muted: #6c757d
         }
@@ -1212,28 +1213,36 @@
     </div>
 
     <!-- Photo viewer -->
-    <!-- <div x-show="photoViewerOpen && photoFeatureOn" x-transition.opacity
-        class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex align-items-center justify-content-center"
-        style="z-index:2000;" @click.self="closePhotoViewer()" @keydown.escape.prevent="closePhotoViewer()">
-        <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center" tabindex="0"
-            x-ref="photoViewerPanel" @keydown.left.prevent="prevPhoto()" @keydown.right.prevent="nextPhoto()"
-            @touchstart="photoTouchStartX=$event.touches[0].clientX" @touchend="photoHandleSwipe($event)">
-            <img :src="currentPhoto" class="img-fluid" style="max-height:90vh; max-width:90vw;" x-show="currentPhoto">
-            <div class="text-white" x-show="!currentPhoto">無照片</div>
-            <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-2"
-                @click.stop="prevPhoto()"><i class="bi bi-chevron-left"></i></button>
-            <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-2"
-                @click.stop="nextPhoto()"><i class="bi bi-chevron-right"></i></button>
-            <button class="btn btn-light position-absolute top-0 end-0 m-2" @click.stop="closePhotoViewer()"><i
-                    class="bi bi-x"></i></button>
-            <button class="btn btn-light position-absolute bottom-0 end-0 m-3" @click.stop="toggleFavorite()"
-                :class="{ 'text-danger': isFavorite(currentPhotoName) }"><i
-                    :class="isFavorite(currentPhotoName) ? 'bi bi-heart-fill' : 'bi bi-heart'"></i></button>
-            <button class="btn btn-light position-absolute bottom-0 start-0 m-3" @click.stop="toggleShowFav()"
-                :class="{ 'text-danger': showFavOnly }"><i class="bi bi-filter"></i> <i class="bi"
-                    :class="showFavOnly ? 'bi-heart-fill' : 'bi-heart'"></i></button>
+     <template x-if="photoViewerOpen && photoFeatureOn">
+        <div x-cloak x-transition.opacity
+            class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-flex align-items-center justify-content-center"
+            style="z-index:2000;" @click.self="closePhotoViewer()" @keydown.escape.prevent="closePhotoViewer()">
+            <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center" tabindex="0"
+                x-ref="photoViewerPanel" @keydown.left.prevent="prevPhoto()" @keydown.right.prevent="nextPhoto()"
+                @touchstart="photoTouchStartX=$event.touches[0].clientX" @touchend="photoHandleSwipe($event)">
+                <img :src="currentPhoto" class="img-fluid" style="max-height:90vh; max-width:90vw;" x-show="currentPhoto">
+                <div class="text-white" x-show="!currentPhoto">無照片</div>
+                <!-- 放在 x-ref="photoViewerPanel" 的那個 div 裡面（四個按鈕旁邊即可） -->
+                <div class="position-absolute top-0 start-50 translate-middle-x mt-2 px-2 py-1
+                            bg-dark bg-opacity-75 text-white rounded-2 small" x-show="filteredPhotos.length" aria-live="polite">
+                    <span x-text="(photoIndex + 1) + '/' + filteredPhotos.length"></span>
+                </div>
+
+                <button class="btn btn-light position-absolute top-50 start-0 translate-middle-y ms-2"
+                    @click.stop="prevPhoto()"><i class="bi bi-chevron-left"></i></button>
+                <button class="btn btn-light position-absolute top-50 end-0 translate-middle-y me-2"
+                    @click.stop="nextPhoto()"><i class="bi bi-chevron-right"></i></button>
+                <button class="btn btn-light position-absolute top-0 end-0 m-2" @click.stop="closePhotoViewer()"><i
+                        class="bi bi-x"></i></button>
+                <button class="btn btn-light position-absolute bottom-0 end-0 m-3" @click.stop="toggleFavorite()"
+                    :class="{ 'text-danger': isFavorite(currentPhotoName) }"><i
+                        :class="isFavorite(currentPhotoName) ? 'bi bi-heart-fill' : 'bi bi-heart'"></i></button>
+                <button class="btn btn-light position-absolute bottom-0 start-0 m-3" @click.stop="toggleShowFav()"
+                    :class="{ 'text-danger': showFavOnly }"><i class="bi bi-filter"></i> <i class="bi"
+                        :class="showFavOnly ? 'bi-heart-fill' : 'bi-heart'"></i></button>
+            </div>
         </div>
-    </div> -->
+    </template>
 
     <script>
         // —— 工具函數 ——
@@ -1384,7 +1393,7 @@
                 unsureMarkAll: {},      // 一頁所有題模式下的不確定勾選
                 easyFeatureOn: true,   // 啟用 easy.json 功能的開關，改這裡
                 noteFeatureOn: false,  // 啟用筆記功能的開關，改這裡
-                photoFeatureOn: false, // 啟用照片功能的開關，改這裡
+                photoFeatureOn: true, // 啟用照片功能的開關，改這裡
                 noteHtml: '',
                 photoViewerOpen: false,
                 photoList: [],
