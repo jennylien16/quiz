@@ -841,9 +841,14 @@
                                         <div class="fs-5 mt-1" x-html="md(q?.question || '')"></div>
                                     </div>
                                     <div class="text-end d-flex flex-column align-items-end">
-                                        <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(q)" title="複製">
-                                            <i class="bi bi-clipboard"></i>
-                                        </button>
+                                        <div class="btn-group btn-group-sm mb-2">
+                                            <button class="btn btn-outline-secondary" @click="copyQuestion(q)" title="複製">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @click="toggleEasy(q.id)" :title="(stats[q.id]?.easy)?'取消簡單':'標註簡單'">
+                                                <i class="bi" :class="(stats[q.id]?.easy? 'bi-x-circle':'bi-bookmark-check')"></i>
+                                            </button>
+                                        </div>
                                         <span class="badge rounded-pill mb-1" :class="(stats[q.id]?.easy)?'badge-easy':''"
                                             x-text="(stats[q.id]?.easy)?'已標簡單':''"></span>
                                         <template x-if="(stats[q.id]?.wrong||0)+(stats[q.id]?.attempts||0)>0">
@@ -882,9 +887,14 @@
                                         <div class="fs-5 mt-1" x-html="md(currentPreview?.question || '')"></div>
                                     </div>
                                     <div class="text-end d-flex flex-column align-items-end">
-                                        <button class="btn btn-sm btn-outline-secondary mb-2" @click="copyQuestion(currentPreview)" title="複製">
-                                            <i class="bi bi-clipboard"></i>
-                                        </button>
+                                        <div class="btn-group btn-group-sm mb-2">
+                                            <button class="btn btn-outline-secondary" @click="copyQuestion(currentPreview)" title="複製">
+                                                <i class="bi bi-clipboard"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @click="toggleEasy(currentPreview.id)" :title="(stats[currentPreview.id]?.easy)?'取消簡單':'標註簡單'">
+                                                <i class="bi" :class="(stats[currentPreview.id]?.easy? 'bi-x-circle':'bi-bookmark-check')"></i>
+                                            </button>
+                                        </div>
                                         <span class="badge rounded-pill mb-1" :class="(stats[currentPreview.id]?.easy)?'badge-easy':''" x-text="(stats[currentPreview.id]?.easy)?'已標簡單':''"></span>
                                         <template x-if="(stats[currentPreview.id]?.wrong||0)+(stats[currentPreview.id]?.attempts||0)>0">
                                             <div class="small-muted"><span class="text-danger">錯題</span>/作答：<span class="text-danger" x-text="stats[currentPreview.id]?.wrong||0"></span>/<span x-text="stats[currentPreview.id]?.attempts||0"></span></div>
@@ -1874,7 +1884,11 @@
                         this.sortAsc = true;
                     }
                 },
-                toggleEasy(id) { if (!this.stats[id]) return; this.stats[id].easy = !this.stats[id].easy; this.saveStatsToLS(); },
+                toggleEasy(id) {
+                    if (!this.stats[id]) this.stats[id] = this.defaultStat(id);
+                    this.stats[id].easy = !this.stats[id].easy;
+                    this.saveStatsToLS();
+                },
                 clearOne(id) { if (!this.stats[id]) return; if (confirm(`清除此題（${id}）的紀錄？`)) { this.stats[id] = this.defaultStat(id); this.saveStatsToLS(); } },
 
                 // —— Bug 回報處理 ——
