@@ -855,7 +855,7 @@
                                 </div>
                                 <div class="mt-3">
                                     <template x-for="opt in q.options" :key="opt.id">
-                                        <div class="option-item">
+                                        <div class="option-item" :class="q.answer.includes(opt.id) ? 'option-correct' : ''">
                                             <div class="fw-semibold" x-text="opt.text"></div>
                                             <div class="small text-secondary" x-show="debugMode">id: <span class="mono"
                                                     x-text="opt.id"></span></div>
@@ -893,7 +893,7 @@
                                 </div>
                                 <div class="mt-3">
                                     <template x-for="opt in currentPreview?.options || []" :key="opt.id">
-                                        <div class="option-item">
+                                        <div class="option-item" :class="q.answer.includes(opt.id) ? 'option-correct' : ''">
                                             <div class="fw-semibold" x-text="opt.text"></div>
                                             <div class="small text-secondary" x-show="debugMode">id: <span class="mono" x-text="opt.id"></span></div>
                                         </div>
