@@ -1817,23 +1817,11 @@
                     const file = e.target.files?.[0]; if (!file) return;
                     try {
                         const text = await fileToText(file); const incoming = JSON.parse(text) || {};
-                        // 合併策略：相同題號的 attempts/wrong/correct 相加；easy 取 OR；lastSelected/lastAnsweredAt 取較新
-                        const merged = { ...this.stats };
-                        for (const [id, s] of Object.entries(incoming)) {
-                            if (!merged[id]) { merged[id] = s; continue; }
-                            const cur = merged[id];
-                            merged[id] = {
-                                id,
-                                attempts: (cur.attempts || 0) + (s.attempts || 0),
-                                wrong: (cur.wrong || 0) + (s.wrong || 0),
-                                correct: (cur.correct || 0) + (s.correct || 0),
-                                lastSelected: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.lastSelected : cur.lastSelected) || [],
-                                easy: !!(cur.easy || s.easy),
-                                unsure: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.unsure : cur.unsure) || false,
-                                lastAnsweredAt: Math.max(cur.lastAnsweredAt || 0, s.lastAnsweredAt || 0) || null,
-                            };
-                        }
-                        this.stats = merged; this.saveStatsToLS();
+                        // 先清空現有紀錄再匯入
+                        this.stats = {};
+                        this.saveStatsToLS();
+                        this.stats = incoming;
+                        this.saveStatsToLS();
                         alert('匯入完成！');
                     } catch (err) { alert('匯入失敗：' + err.message); }
                     e.target.value = '';
@@ -1842,22 +1830,11 @@
                     pickFromDrive(text => {
                         try {
                             const incoming = JSON.parse(text) || {};
-                            const merged = { ...this.stats };
-                            for (const [id, s] of Object.entries(incoming)) {
-                                if (!merged[id]) { merged[id] = s; continue; }
-                                const cur = merged[id];
-                                merged[id] = {
-                                    id,
-                                    attempts: (cur.attempts || 0) + (s.attempts || 0),
-                                    wrong: (cur.wrong || 0) + (s.wrong || 0),
-                                    correct: (cur.correct || 0) + (s.correct || 0),
-                                    lastSelected: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.lastSelected : cur.lastSelected) || [],
-                                    easy: !!(cur.easy || s.easy),
-                                    unsure: (s.lastAnsweredAt > cur.lastAnsweredAt ? s.unsure : cur.unsure) || false,
-                                    lastAnsweredAt: Math.max(cur.lastAnsweredAt || 0, s.lastAnsweredAt || 0) || null,
-                                };
-                            }
-                            this.stats = merged; this.saveStatsToLS();
+                            // 先清空現有紀錄再匯入
+                            this.stats = {};
+                            this.saveStatsToLS();
+                            this.stats = incoming;
+                            this.saveStatsToLS();
                             alert('匯入完成！');
                         } catch (err) { alert('匯入失敗：' + err.message); }
                     });
